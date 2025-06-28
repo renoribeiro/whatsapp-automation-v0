@@ -1,0 +1,571 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  SUPER_ADMIN
+  AGENCY_ADMIN
+  COMPANY_ADMIN
+  SELLER
+}
+
+enum ConnectionType {
+  OFFICIAL_API
+  EVOLUTION_API
+}
+
+enum ConnectionStatus {
+  CONNECTED
+  DISCONNECTED
+  CONNECTING
+  ERROR
+  REQUIRES_ATTENTION
+}
+
+enum LeadSource {
+  META_ADS
+  GOOGLE_ADS
+  TIKTOK_ADS
+  ORGANIC_SITE
+  LINK_BIO
+  DIRECT
+  OTHER
+}
+
+enum MessageType {
+  TEXT
+  IMAGE
+  AUDIO
+  VIDEO
+  DOCUMENT
+  LOCATION
+  CONTACT
+}
+
+enum MessageDirection {
+  INBOUND
+  OUTBOUND
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+  CANCELLED
+  TRIAL
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  firstName String
+  lastName  String
+  phone     String?
+  role      UserRole
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relacionamentos
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  agencyId String?
+  agency   Agency? @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+
+  // Números de WhatsApp atribuídos ao vendedor
+  whatsappNumbers WhatsAppConnection[]
+
+  // Conversas do vendedor
+  conversations Conversation[]
+
+  // Mensagens enviadas
+  sentMessages Message[]
+
+  // Campanhas de massa criadas
+  massMessageCampaigns MassMessageCampaign[]
+
+  // Respostas rápidas
+  quickReplies QuickReply[]
+
+  // Logs de atividade
+  activityLogs ActivityLog[]
+
+  // Permissões específicas do usuário
+  userPermissions UserPermission[]
+
+  @@map("users")
+}
+
+model Agency {
+  id          String   @id @default(uuid())
+  name        String
+  email       String   @unique
+  phone       String?
+  document    String?  // CNPJ
+  address     String?
+  isActive    Boolean  @default(true)
+  commission  Float    @default(0.25) // 25% de comissão
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relacionamentos
+  users     User[]
+  companies Company[]
+
+  // Comissões recebidas
+  commissions Commission[]
+
+  @@map("agencies")
+}
+
+model Company {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  phone     String?
+  document  String?  // CNPJ
+  address   String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relacionamentos
+  agencyId String?
+  agency   Agency? @relation(fields: [agencyId], references: [id])
+
+  users               User[]
+  whatsappConnections WhatsAppConnection[]
+  subscriptions       Subscription[]
+  contacts            Contact[]
+  conversations       Conversation[]
+  tags                Tag[]
+  quickReplies        QuickReply[]
+  massMessageCampaigns MassMessageCampaign[]
+  automationFlows     AutomationFlow[]
+  reports             Report[]
+  activityLogs        ActivityLog[]
+  integrations        Integration[]
+  permissions         Permission[]
+  roles               Role[]
+
+  @@map("companies")
+}
+
+model Permission {
+  id          String  @id @default(uuid())
+  name        String  // Ex: "users.create", "messages.send"
+  displayName String  // Ex: "Criar Usuários", "Enviar Mensagens"
+  description String?
+  category    String? // Ex: "Usuários", "Mensagens"
+  isActive    Boolean @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relacionamentos
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  userPermissions UserPermission[]
+  rolePermissions RolePermission[]
+
+  @@unique([name, companyId])
+  @@map("permissions")
+}
+
+model Role {
+  id          String  @id @default(uuid())
+  name        String  // Ex: "manager", "operator"
+  displayName String  // Ex: "Gerente", "Operador"
+  description String?
+  isActive    Boolean @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relacionamentos
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  rolePermissions RolePermission[]
+
+  @@unique([name, companyId])
+  @@map("roles")
+}
+
+model UserPermission {
+  id           String    @id @default(uuid())
+  userId       String
+  permissionId String
+  granted      Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  // Relacionamentos
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, permissionId])
+  @@map("user_permissions")
+}
+
+model RolePermission {
+  id           String    @id @default(uuid())
+  roleId       String
+  permissionId String
+  granted      Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  // Relacionamentos
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+model WhatsAppConnection {
+  id             String           @id @default(uuid())
+  phoneNumber    String
+  displayName    String?
+  connectionType ConnectionType
+  status         ConnectionStatus @default(DISCONNECTED)
+  qrCode         String?
+  accessToken    String?          // Para API oficial
+  instanceId     String?          // Para Evolution API
+  webhookUrl     String?
+  isActive       Boolean          @default(true)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  // Relacionamentos
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  assignedUserId String?
+  assignedUser   User? @relation(fields: [assignedUserId], references: [id])
+
+  conversations Conversation[]
+  messages      Message[]
+
+  @@unique([phoneNumber, companyId])
+  @@map("whatsapp_connections")
+}
+
+model Contact {
+  id          String   @id @default(uuid())
+  phoneNumber String
+  name        String?
+  email       String?
+  avatar      String?
+  isBlocked   Boolean  @default(false)
+  notes       String?
+  leadSource  String?
+  utmSource   String?
+  utmMedium   String?
+  utmCampaign String?
+  utmTerm     String?
+  utmContent  String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relacionamentos
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  conversations Conversation[]
+  tags          ContactTag[]
+
+  @@unique([phoneNumber, companyId])
+  @@map("contacts")
+}
+
+model Conversation {
+  id           String   @id @default(uuid())
+  isActive     Boolean  @default(true)
+  lastMessage  String?
+  lastActivity DateTime @default(now())
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relacionamentos
+  contactId String
+  contact   Contact @relation(fields: [contactId], references: [id], onDelete: Cascade)
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  whatsappConnectionId String
+  whatsappConnection   WhatsAppConnection @relation(fields: [whatsappConnectionId], references: [id], onDelete: Cascade)
+
+  assignedUserId String?
+  assignedUser   User? @relation(fields: [assignedUserId], references: [id])
+
+  messages Message[]
+
+  @@map("conversations")
+}
+
+model Message {
+  id            String           @id @default(uuid())
+  messageId     String?          // ID da mensagem no WhatsApp
+  content       String
+  messageType   MessageType      @default(TEXT)
+  direction     MessageDirection
+  isRead        Boolean          @default(false)
+  deliveredAt   DateTime?
+  readAt        DateTime?
+  mediaUrl      String?
+  thumbnailUrl  String?
+  fileName      String?
+  fileSize      Int?
+  isScheduled   Boolean          @default(false)
+  scheduledFor  DateTime?
+  sentAt        DateTime?
+  createdAt     DateTime         @default(now())
+
+  // Relacionamentos
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  whatsappConnectionId String
+  whatsappConnection   WhatsAppConnection @relation(fields: [whatsappConnectionId], references: [id], onDelete: Cascade)
+
+  sentByUserId String?
+  sentByUser   User? @relation(fields: [sentByUserId], references: [id])
+
+  @@map("messages")
+}
+
+model Tag {
+  id          String  @id @default(uuid())
+  name        String
+  color       String  @default("#3B82F6")
+  description String?
+  order       Int     @default(0)
+  isActive    Boolean @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relacionamentos
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  contacts ContactTag[]
+
+  @@unique([name, companyId])
+  @@map("tags")
+}
+
+model ContactTag {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+
+  // Relacionamentos
+  contactId String
+  contact   Contact @relation(fields: [contactId], references: [id], onDelete: Cascade)
+
+  tagId String
+  tag   Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@unique([contactId, tagId])
+  @@map("contact_tags")
+}
+
+model QuickReply {
+  id        String   @id @default(uuid())
+  title     String
+  content   String
+  shortcut  String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relacionamentos
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  createdByUserId String
+  createdByUser   User   @relation(fields: [createdByUserId], references: [id])
+
+  @@map("quick_replies")
+}
+
+model MassMessageCampaign {
+  id               String   @id @default(uuid())
+  name             String
+  message          String
+  messageVariations String[] // Para spin syntax
+  totalContacts    Int      @default(0)
+  sentCount        Int      @default(0)
+  failedCount      Int      @default(0)
+  minInterval      Int      @default(30)  // segundos
+  maxInterval      Int      @default(120) // segundos
+  isActive         Boolean  @default(true)
+  isCompleted      Boolean  @default(false)
+  scheduledFor     DateTime?
+  startedAt        DateTime?
+  completedAt      DateTime?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  // Relacionamentos
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  createdByUserId String
+  createdByUser   User   @relation(fields: [createdByUserId], references: [id])
+
+  @@map("mass_message_campaigns")
+}
+
+model AutomationFlow {
+  id          String  @id @default(uuid())
+  name        String
+  description String?
+  isActive    Boolean @default(true)
+  flowData    Json    // Estrutura do fluxo em JSON
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relacionamentos
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@map("automation_flows")
+}
+
+model Subscription {
+  id            String             @id @default(uuid())
+  status        SubscriptionStatus @default(TRIAL)
+  planName      String             @default("Standard")
+  basePrice     Float              @default(150.00)
+  pricePerUser  Float              @default(100.00)
+  activeUsers   Int                @default(0)
+  totalAmount   Float              @default(150.00)
+  billingCycle  String             @default("monthly")
+  currentPeriodStart DateTime
+  currentPeriodEnd   DateTime
+  trialEndsAt   DateTime?
+  cancelledAt   DateTime?
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+
+  // Relacionamentos
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  invoices Invoice[]
+
+  @@map("subscriptions")
+}
+
+model Invoice {
+  id            String        @id @default(uuid())
+  invoiceNumber String        @unique
+  amount        Float
+  status        PaymentStatus @default(PENDING)
+  dueDate       DateTime
+  paidAt        DateTime?
+  paymentMethod String?
+  stripeInvoiceId String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  // Relacionamentos
+  subscriptionId String
+  subscription   Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+
+  commissions Commission[]
+
+  @@map("invoices")
+}
+
+model Commission {
+  id            String        @id @default(uuid())
+  amount        Float
+  percentage    Float         @default(0.25)
+  status        PaymentStatus @default(PENDING)
+  paidAt        DateTime?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  // Relacionamentos
+  agencyId String
+  agency   Agency @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+
+  invoiceId String
+  invoice   Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@map("commissions")
+}
+
+model Report {
+  id          String   @id @default(uuid())
+  name        String
+  type        String   // "leads", "conversations", "performance"
+  filters     Json     // Filtros aplicados
+  data        Json     // Dados do relatório
+  isScheduled Boolean  @default(false)
+  schedule    String?  // Cron expression
+  emailList   String[] // Lista de emails para envio
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relacionamentos
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@map("reports")
+}
+
+model ActivityLog {
+  id          String   @id @default(uuid())
+  action      String
+  description String
+  metadata    Json?
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime @default(now())
+
+  // Relacionamentos
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id])
+
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id])
+
+  @@map("activity_logs")
+}
+
+model Integration {
+  id          String  @id @default(uuid())
+  name        String  // "google_sheets", "crm_webhook", "openai", etc.
+  type        String
+  config      Json    // Configurações específicas da integração
+  isActive    Boolean @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relacionamentos
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@map("integrations")
+}

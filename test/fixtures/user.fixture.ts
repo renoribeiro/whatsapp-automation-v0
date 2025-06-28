@@ -1,0 +1,32 @@
+export const userFixture = {
+  superAdmin: {
+    id: "1",
+    email: "admin@test.com",
+    name: "Super Admin",
+    role: "super_admin",
+    companyId: null,
+    agencyId: null,
+    createdAt: new Date("2024-01-01"),
+    updatedAt: new Date("2024-01-01"),
+  },
+  companyAdmin: {
+    id: "2",
+    email: "company@test.com",
+    name: "Company Admin",
+    role: "company_admin",
+    companyId: "1",
+    agencyId: null,
+    createdAt: new Date("2024-01-01"),
+    updatedAt: new Date("2024-01-01"),
+  },
+  seller: {
+    id: "3",
+    email: "seller@test.com",
+    name: "Seller User",
+    role: "seller",
+    companyId: "1",
+    agencyId: null,
+    createdAt: new Date("2024-01-01"),
+    updatedAt: new Date("2024-01-01"),
+  },
+}
