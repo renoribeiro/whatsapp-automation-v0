@@ -1,7 +1,6 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -20,13 +19,19 @@ import {
 import { useAuth } from "@/hooks/use-auth"
 
 export default function DashboardPage() {
-  const { getCurrentUser, logout, isAuthenticated } = useAuth()
+  const { getCurrentUser, logout, isAuthenticated, isInitialized } = useAuth()
   const [user, setUser] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(true)
-  const router = useRouter()
 
   useEffect(() => {
     console.log("🔍 [Dashboard] Verificando autenticação...")
+    console.log("🔍 [Dashboard] isInitialized:", isInitialized)
+    console.log("🔍 [Dashboard] isAuthenticated:", isAuthenticated())
+
+    if (!isInitialized) {
+      console.log("⏳ [Dashboard] Aguardando inicialização...")
+      return
+    }
 
     // Verificar localStorage diretamente também
     if (typeof window !== "undefined") {
@@ -49,7 +54,7 @@ export default function DashboardPage() {
 
     if (!isAuthenticated()) {
       console.log("❌ [Dashboard] Usuário não autenticado, redirecionando...")
-      router.push("/auth/login")
+      window.location.href = "/auth/login"
       return
     }
 
@@ -57,14 +62,14 @@ export default function DashboardPage() {
     console.log("👤 [Dashboard] Usuário atual:", currentUser)
     setUser(currentUser)
     setIsLoading(false)
-  }, [isAuthenticated, getCurrentUser, router])
+  }, [isAuthenticated, getCurrentUser, isInitialized])
 
   const handleLogout = () => {
     console.log("🚪 [Dashboard] Fazendo logout...")
     logout()
   }
 
-  if (isLoading) {
+  if (isLoading || !isInitialized) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
@@ -82,7 +87,7 @@ export default function DashboardPage() {
           <div className="bg-red-100 p-4 rounded-lg mb-4">
             <p className="text-red-800">Erro: Usuário não encontrado</p>
           </div>
-          <Button onClick={() => router.push("/auth/login")}>Ir para Login</Button>
+          <Button onClick={() => (window.location.href = "/auth/login")}>Ir para Login</Button>
         </div>
       </div>
     )

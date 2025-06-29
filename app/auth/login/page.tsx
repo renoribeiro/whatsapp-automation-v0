@@ -3,7 +3,6 @@
 import type React from "react"
 import { useState, useEffect } from "react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -30,23 +29,19 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
-  const { login, isLoading, isAuthenticated } = useAuth()
-  const router = useRouter()
+  const { login, isLoading, isAuthenticated, isInitialized } = useAuth()
 
-  // Verificar se já está logado
+  // Verificar se já está logado - só depois de inicializar
   useEffect(() => {
-    console.log("🔍 [LoginPage] Verificando se já está autenticado...")
-    if (isAuthenticated()) {
+    if (isInitialized && isAuthenticated()) {
       console.log("👤 [LoginPage] Usuário já está logado, redirecionando...")
-      router.push("/dashboard")
+      window.location.href = "/dashboard"
     }
-  }, [isAuthenticated, router])
+  }, [isAuthenticated, isInitialized])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     console.log("📝 [LoginPage] Formulário submetido")
-    console.log("📧 [LoginPage] Email:", email)
-    console.log("🔑 [LoginPage] Password length:", password?.length || 0)
 
     setError("")
     setSuccess("")
@@ -76,6 +71,8 @@ export default function LoginPage() {
         console.log("✅ [LoginPage] Login realizado com sucesso!")
         setSuccess("Login realizado com sucesso! Redirecionando...")
         setError("")
+
+        // O redirecionamento será feito pelo hook useAuth
       }
     } catch (err) {
       console.error("❌ [LoginPage] Erro capturado:", err)
@@ -113,6 +110,18 @@ export default function LoginPage() {
       description: "Admin da empresa",
     },
   ]
+
+  // Mostrar loading enquanto inicializa
+  if (!isInitialized) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 via-white to-blue-50">
+        <div className="text-center">
+          <div className="w-8 h-8 border-4 border-green-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-gray-600">Inicializando...</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-blue-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex">
@@ -251,6 +260,7 @@ export default function LoginPage() {
                     type="button"
                     onClick={() => fillCredentials(cred.email, cred.password)}
                     className="w-full text-left p-3 rounded-lg bg-green-100 dark:bg-green-900/30 hover:bg-green-200 dark:hover:bg-green-900/50 transition-all duration-200 border border-green-200 dark:border-green-800"
+                    disabled={isLoading}
                   >
                     <p className="text-sm font-medium text-green-700 dark:text-green-300">{cred.email}</p>
                     <p className="text-sm text-green-600 dark:text-green-400">{cred.password}</p>

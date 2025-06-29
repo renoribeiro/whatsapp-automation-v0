@@ -63,6 +63,7 @@ const testAccounts = [
 export function useAuth() {
   const [isLoading, setIsLoading] = useState(false)
   const [user, setUser] = useState<User | null>(null)
+  const [isInitialized, setIsInitialized] = useState(false)
   const router = useRouter()
 
   // Verificar se há usuário logado ao carregar
@@ -70,7 +71,7 @@ export function useAuth() {
     if (typeof window !== "undefined") {
       try {
         const authData = localStorage.getItem("auth-token")
-        console.log("🔍 [useAuth] Verificando localStorage:", authData)
+        console.log("🔍 [useAuth] Verificando localStorage:", !!authData)
 
         if (authData) {
           const parsed = JSON.parse(authData)
@@ -82,6 +83,8 @@ export function useAuth() {
       } catch (error) {
         console.error("❌ [useAuth] Erro ao verificar auth:", error)
         localStorage.removeItem("auth-token")
+      } finally {
+        setIsInitialized(true)
       }
     }
   }, [])
@@ -100,10 +103,6 @@ export function useAuth() {
 
       // Verificar credenciais
       console.log("🔍 [LOGIN] Procurando conta nos dados de teste...")
-      console.log(
-        "🔍 [LOGIN] Contas disponíveis:",
-        testAccounts.map((acc) => ({ email: acc.email, hasPassword: !!acc.password })),
-      )
 
       const account = testAccounts.find((acc) => {
         const emailMatch = acc.email === email
@@ -135,18 +134,14 @@ export function useAuth() {
         // Atualizar estado
         setUser(account.user)
 
-        // Redirecionar usando router.push primeiro
         console.log("🔄 [LOGIN] Redirecionando para dashboard...")
-        router.push("/dashboard")
 
-        // Backup com window.location após um delay
+        // Forçar redirecionamento imediato
         setTimeout(() => {
-          if (typeof window !== "undefined") {
-            window.location.href = "/dashboard"
-          }
-        }, 500)
+          window.location.href = "/dashboard"
+        }, 100)
 
-        return { success: true }
+        return { success: true, user: account.user }
       } else {
         console.log("❌ [LOGIN] Credenciais inválidas")
         throw new Error("Email ou senha incorretos. Verifique suas credenciais.")
@@ -187,9 +182,12 @@ export function useAuth() {
       }
 
       setUser(newUser)
-      router.push("/dashboard")
 
-      return { success: true }
+      setTimeout(() => {
+        window.location.href = "/dashboard"
+      }, 100)
+
+      return { success: true, user: newUser }
     } catch (error) {
       console.error("❌ [REGISTER] Erro no registro:", error)
       throw error
@@ -204,7 +202,7 @@ export function useAuth() {
       localStorage.removeItem("auth-token")
     }
     setUser(null)
-    router.push("/")
+    window.location.href = "/"
   }
 
   const getCurrentUser = () => {
@@ -223,5 +221,6 @@ export function useAuth() {
     isAuthenticated,
     isLoading,
     user,
+    isInitialized,
   }
 }
