@@ -1,528 +1,322 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
-import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Separator } from "@/components/ui/separator"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Shield, Users, Search, Plus, Eye, Edit, Trash2, UserCheck, Lock, Unlock, Filter } from "lucide-react"
-import { useToast } from "@/hooks/use-toast"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Shield, Plus, Search, Users, Lock, Unlock, Settings } from "lucide-react"
 
 interface Permission {
   id: string
   name: string
-  displayName: string
-  description?: string
-  category: string
+  description: string
+  resource: string
+  action: string
   isActive: boolean
-  userPermissions: Array<{
-    userId: string
-    granted: boolean
-    user: {
-      id: string
-      firstName: string
-      lastName: string
-      email: string
-      role: string
-    }
-  }>
 }
 
-interface User {
+interface Role {
   id: string
-  firstName: string
-  lastName: string
-  email: string
-  role: string
-  isActive: boolean
+  name: string
+  description: string
+  permissions: string[]
+  userCount: number
 }
+
+const mockPermissions: Permission[] = [
+  {
+    id: "1",
+    name: "Visualizar Usuários",
+    description: "Permite visualizar a lista de usuários",
+    resource: "users",
+    action: "read",
+    isActive: true,
+  },
+  {
+    id: "2",
+    name: "Criar Usuários",
+    description: "Permite criar novos usuários",
+    resource: "users",
+    action: "create",
+    isActive: true,
+  },
+  {
+    id: "3",
+    name: "Editar Usuários",
+    description: "Permite editar informações de usuários",
+    resource: "users",
+    action: "update",
+    isActive: true,
+  },
+  {
+    id: "4",
+    name: "Excluir Usuários",
+    description: "Permite excluir usuários",
+    resource: "users",
+    action: "delete",
+    isActive: false,
+  },
+  {
+    id: "5",
+    name: "Visualizar Empresas",
+    description: "Permite visualizar a lista de empresas",
+    resource: "companies",
+    action: "read",
+    isActive: true,
+  },
+  {
+    id: "6",
+    name: "Gerenciar Conversas",
+    description: "Permite gerenciar conversas do WhatsApp",
+    resource: "conversations",
+    action: "manage",
+    isActive: true,
+  },
+]
+
+const mockRoles: Role[] = [
+  {
+    id: "1",
+    name: "Super Admin",
+    description: "Acesso total ao sistema",
+    permissions: ["1", "2", "3", "4", "5", "6"],
+    userCount: 2,
+  },
+  {
+    id: "2",
+    name: "Admin da Empresa",
+    description: "Administrador de empresa com acesso limitado",
+    permissions: ["1", "2", "3", "5", "6"],
+    userCount: 8,
+  },
+  {
+    id: "3",
+    name: "Usuário",
+    description: "Usuário padrão com acesso básico",
+    permissions: ["1", "5", "6"],
+    userCount: 25,
+  },
+]
 
 export default function PermissionsPage() {
-  const [permissions, setPermissions] = useState<Record<string, Permission[]>>({})
-  const [users, setUsers] = useState<User[]>([])
-  const [selectedUser, setSelectedUser] = useState<string>("")
-  const [userPermissions, setUserPermissions] = useState<Permission[]>([])
+  const [permissions, setPermissions] = useState<Permission[]>(mockPermissions)
+  const [roles, setRoles] = useState<Role[]>(mockRoles)
   const [searchTerm, setSearchTerm] = useState("")
-  const [selectedCategory, setSelectedCategory] = useState<string>("all")
-  const [loading, setLoading] = useState(true)
-  const { toast } = useToast()
 
-  useEffect(() => {
-    loadPermissions()
-    loadUsers()
-  }, [])
-
-  useEffect(() => {
-    if (selectedUser) {
-      loadUserPermissions(selectedUser)
-    }
-  }, [selectedUser])
-
-  const loadPermissions = async () => {
-    try {
-      // Simular carregamento de permissões agrupadas por categoria
-      const mockPermissions = {
-        Dashboard: [
-          {
-            id: "1",
-            name: "dashboard.view",
-            displayName: "Visualizar Dashboard",
-            description: "Permite visualizar o dashboard principal",
-            category: "Dashboard",
-            isActive: true,
-            userPermissions: [],
-          },
-          {
-            id: "2",
-            name: "dashboard.analytics",
-            displayName: "Ver Análises",
-            description: "Permite ver métricas e análises detalhadas",
-            category: "Dashboard",
-            isActive: true,
-            userPermissions: [],
-          },
-        ],
-        Usuários: [
-          {
-            id: "3",
-            name: "users.view",
-            displayName: "Visualizar Usuários",
-            description: "Permite visualizar lista de usuários",
-            category: "Usuários",
-            isActive: true,
-            userPermissions: [],
-          },
-          {
-            id: "4",
-            name: "users.create",
-            displayName: "Criar Usuários",
-            description: "Permite criar novos usuários",
-            category: "Usuários",
-            isActive: true,
-            userPermissions: [],
-          },
-          {
-            id: "5",
-            name: "users.edit",
-            displayName: "Editar Usuários",
-            description: "Permite editar dados de usuários",
-            category: "Usuários",
-            isActive: true,
-            userPermissions: [],
-          },
-          {
-            id: "6",
-            name: "users.permissions",
-            displayName: "Gerenciar Permissões",
-            description: "Permite gerenciar permissões de usuários",
-            category: "Usuários",
-            isActive: true,
-            userPermissions: [],
-          },
-        ],
-        Conversas: [
-          {
-            id: "7",
-            name: "conversations.view",
-            displayName: "Visualizar Conversas",
-            description: "Permite visualizar conversas",
-            category: "Conversas",
-            isActive: true,
-            userPermissions: [],
-          },
-          {
-            id: "8",
-            name: "conversations.assign",
-            displayName: "Atribuir Conversas",
-            description: "Permite atribuir conversas a usuários",
-            category: "Conversas",
-            isActive: true,
-            userPermissions: [],
-          },
-        ],
-        Mensagens: [
-          {
-            id: "9",
-            name: "messages.send",
-            displayName: "Enviar Mensagens",
-            description: "Permite enviar mensagens",
-            category: "Mensagens",
-            isActive: true,
-            userPermissions: [],
-          },
-          {
-            id: "10",
-            name: "messages.mass",
-            displayName: "Mensagens em Massa",
-            description: "Permite enviar mensagens em massa",
-            category: "Mensagens",
-            isActive: true,
-            userPermissions: [],
-          },
-        ],
-      }
-
-      setPermissions(mockPermissions)
-    } catch (error) {
-      toast({
-        title: "Erro",
-        description: "Erro ao carregar permissões",
-        variant: "destructive",
-      })
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const loadUsers = async () => {
-    try {
-      // Simular carregamento de usuários
-      const mockUsers = [
-        {
-          id: "1",
-          firstName: "João",
-          lastName: "Silva",
-          email: "joao@empresa.com",
-          role: "COMPANY_ADMIN",
-          isActive: true,
-        },
-        {
-          id: "2",
-          firstName: "Maria",
-          lastName: "Santos",
-          email: "maria@empresa.com",
-          role: "SELLER",
-          isActive: true,
-        },
-        {
-          id: "3",
-          firstName: "Pedro",
-          lastName: "Costa",
-          email: "pedro@empresa.com",
-          role: "SELLER",
-          isActive: true,
-        },
-      ]
-
-      setUsers(mockUsers)
-    } catch (error) {
-      toast({
-        title: "Erro",
-        description: "Erro ao carregar usuários",
-        variant: "destructive",
-      })
-    }
-  }
-
-  const loadUserPermissions = async (userId: string) => {
-    try {
-      // Simular carregamento de permissões do usuário
-      const mockUserPermissions = Object.values(permissions)
-        .flat()
-        .map((permission) => ({
-          ...permission,
-          granted: Math.random() > 0.5, // Simular permissões aleatórias
-          source: Math.random() > 0.5 ? "user" : "role",
-        }))
-
-      setUserPermissions(mockUserPermissions as Permission[])
-    } catch (error) {
-      toast({
-        title: "Erro",
-        description: "Erro ao carregar permissões do usuário",
-        variant: "destructive",
-      })
-    }
-  }
-
-  const handlePermissionToggle = async (userId: string, permissionId: string, granted: boolean) => {
-    try {
-      // Simular atualização de permissão
-      await new Promise((resolve) => setTimeout(resolve, 500))
-
-      setUserPermissions((prev) =>
-        prev.map((perm) => (perm.id === permissionId ? { ...perm, granted, source: "user" } : perm)),
-      )
-
-      toast({
-        title: "Sucesso",
-        description: `Permissão ${granted ? "concedida" : "removida"} com sucesso`,
-      })
-    } catch (error) {
-      toast({
-        title: "Erro",
-        description: "Erro ao atualizar permissão",
-        variant: "destructive",
-      })
-    }
-  }
-
-  const filteredPermissions = Object.entries(permissions).reduce(
-    (acc, [category, perms]) => {
-      if (selectedCategory !== "all" && category !== selectedCategory) {
-        return acc
-      }
-
-      const filtered = perms.filter(
-        (perm) =>
-          perm.displayName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          perm.description?.toLowerCase().includes(searchTerm.toLowerCase()),
-      )
-
-      if (filtered.length > 0) {
-        acc[category] = filtered
-      }
-
-      return acc
-    },
-    {} as Record<string, Permission[]>,
+  const filteredPermissions = permissions.filter(
+    (permission) =>
+      permission.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      permission.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      permission.resource.toLowerCase().includes(searchTerm.toLowerCase()),
   )
 
-  const categories = Object.keys(permissions)
+  const togglePermission = (id: string) => {
+    setPermissions(permissions.map((p) => (p.id === id ? { ...p, isActive: !p.isActive } : p)))
+  }
 
-  if (loading) {
+  const getResourceBadge = (resource: string) => {
+    const colors = {
+      users: "bg-blue-100 text-blue-800 border-blue-200",
+      companies: "bg-green-100 text-green-800 border-green-200",
+      conversations: "bg-purple-100 text-purple-800 border-purple-200",
+      reports: "bg-orange-100 text-orange-800 border-orange-200",
+    }
+
     return (
-      <div className="flex items-center justify-center h-96">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
+      <Badge className={colors[resource as keyof typeof colors] || "bg-gray-100 text-gray-800 border-gray-200"}>
+        {resource}
+      </Badge>
     )
   }
+
+  const getActionBadge = (action: string) => {
+    const colors = {
+      read: "bg-green-100 text-green-800 border-green-200",
+      create: "bg-blue-100 text-blue-800 border-blue-200",
+      update: "bg-yellow-100 text-yellow-800 border-yellow-200",
+      delete: "bg-red-100 text-red-800 border-red-200",
+      manage: "bg-purple-100 text-purple-800 border-purple-200",
+    }
+
+    return (
+      <Badge className={colors[action as keyof typeof colors] || "bg-gray-100 text-gray-800 border-gray-200"}>
+        {action}
+      </Badge>
+    )
+  }
+
+  const stats = [
+    {
+      title: "Total de Permissões",
+      value: permissions.length.toString(),
+      icon: Shield,
+      color: "text-blue-600",
+      bgColor: "bg-blue-100",
+    },
+    {
+      title: "Permissões Ativas",
+      value: permissions.filter((p) => p.isActive).length.toString(),
+      icon: Unlock,
+      color: "text-green-600",
+      bgColor: "bg-green-100",
+    },
+    {
+      title: "Funções Criadas",
+      value: roles.length.toString(),
+      icon: Users,
+      color: "text-purple-600",
+      bgColor: "bg-purple-100",
+    },
+    {
+      title: "Permissões Inativas",
+      value: permissions.filter((p) => !p.isActive).length.toString(),
+      icon: Lock,
+      color: "text-red-600",
+      bgColor: "bg-red-100",
+    },
+  ]
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Controle de Permissões</h1>
-          <p className="text-muted-foreground">Gerencie permissões granulares por usuário e papel</p>
+          <h1 className="text-3xl font-bold tracking-tight">Permissões</h1>
+          <p className="text-muted-foreground">Gerencie permissões e funções de usuários</p>
         </div>
         <Button>
-          <Plus className="h-4 w-4 mr-2" />
+          <Plus className="mr-2 h-4 w-4" />
           Nova Permissão
         </Button>
       </div>
 
+      {/* Stats Cards */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        {stats.map((stat, index) => {
+          const Icon = stat.icon
+          return (
+            <Card key={index}>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">{stat.title}</p>
+                    <p className="text-2xl font-bold">{stat.value}</p>
+                  </div>
+                  <div className={`${stat.bgColor} p-3 rounded-full`}>
+                    <Icon className={`h-6 w-6 ${stat.color}`} />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )
+        })}
+      </div>
+
+      {/* Tabs */}
       <Tabs defaultValue="permissions" className="space-y-4">
         <TabsList>
-          <TabsTrigger value="permissions">
-            <Shield className="h-4 w-4 mr-2" />
-            Permissões
-          </TabsTrigger>
-          <TabsTrigger value="users">
-            <Users className="h-4 w-4 mr-2" />
-            Usuários
-          </TabsTrigger>
+          <TabsTrigger value="permissions">Permissões</TabsTrigger>
+          <TabsTrigger value="roles">Funções</TabsTrigger>
         </TabsList>
 
         <TabsContent value="permissions" className="space-y-4">
-          {/* Filtros */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">Filtros</CardTitle>
+              <CardTitle>Lista de Permissões</CardTitle>
+              <CardDescription>Gerencie todas as permissões do sistema</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="flex gap-4">
-                <div className="flex-1">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                    <Input
-                      placeholder="Buscar permissões..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10"
-                    />
-                  </div>
+              <div className="flex items-center space-x-4 mb-6">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                  <Input
+                    placeholder="Buscar permissões..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
                 </div>
-                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                  <SelectTrigger className="w-48">
-                    <Filter className="h-4 w-4 mr-2" />
-                    <SelectValue placeholder="Categoria" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todas as categorias</SelectItem>
-                    {categories.map((category) => (
-                      <SelectItem key={category} value={category}>
-                        {category}
-                      </SelectItem>
+              </div>
+
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Nome</TableHead>
+                      <TableHead>Descrição</TableHead>
+                      <TableHead>Recurso</TableHead>
+                      <TableHead>Ação</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Ações</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredPermissions.map((permission) => (
+                      <TableRow key={permission.id}>
+                        <TableCell className="font-medium">{permission.name}</TableCell>
+                        <TableCell>{permission.description}</TableCell>
+                        <TableCell>{getResourceBadge(permission.resource)}</TableCell>
+                        <TableCell>{getActionBadge(permission.action)}</TableCell>
+                        <TableCell>
+                          <Badge
+                            className={permission.isActive ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}
+                          >
+                            {permission.isActive ? "Ativa" : "Inativa"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Switch
+                            checked={permission.isActive}
+                            onCheckedChange={() => togglePermission(permission.id)}
+                          />
+                        </TableCell>
+                      </TableRow>
                     ))}
-                  </SelectContent>
-                </Select>
+                  </TableBody>
+                </Table>
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
 
-          {/* Lista de Permissões */}
-          <div className="space-y-6">
-            {Object.entries(filteredPermissions).map(([category, perms]) => (
-              <Card key={category}>
+        <TabsContent value="roles" className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {roles.map((role) => (
+              <Card key={role.id}>
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Shield className="h-5 w-5" />
-                    {category}
-                    <Badge variant="secondary">{perms.length}</Badge>
+                  <CardTitle className="flex items-center justify-between">
+                    {role.name}
+                    <Badge variant="secondary">{role.userCount} usuários</Badge>
                   </CardTitle>
-                  <CardDescription>Permissões da categoria {category}</CardDescription>
+                  <CardDescription>{role.description}</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid gap-4">
-                    {perms.map((permission) => (
-                      <div key={permission.id} className="flex items-center justify-between p-4 border rounded-lg">
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2">
-                            <h4 className="font-medium">{permission.displayName}</h4>
-                            <Badge variant={permission.isActive ? "default" : "secondary"}>
-                              {permission.isActive ? "Ativa" : "Inativa"}
-                            </Badge>
-                          </div>
-                          <p className="text-sm text-muted-foreground">{permission.description}</p>
-                          <p className="text-xs text-muted-foreground font-mono">{permission.name}</p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Button variant="outline" size="sm">
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button variant="outline" size="sm">
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button variant="outline" size="sm">
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium">Permissões:</p>
+                    <div className="flex flex-wrap gap-1">
+                      {role.permissions.map((permId) => {
+                        const permission = permissions.find((p) => p.id === permId)
+                        return permission ? (
+                          <Badge key={permId} variant="outline" className="text-xs">
+                            {permission.name}
+                          </Badge>
+                        ) : null
+                      })}
+                    </div>
+                  </div>
+                  <div className="flex space-x-2 mt-4">
+                    <Button variant="outline" size="sm">
+                      <Settings className="mr-2 h-4 w-4" />
+                      Editar
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
             ))}
-          </div>
-        </TabsContent>
-
-        <TabsContent value="users" className="space-y-4">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Lista de Usuários */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Usuários</CardTitle>
-                <CardDescription>Selecione um usuário para gerenciar suas permissões</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ScrollArea className="h-96">
-                  <div className="space-y-2">
-                    {users.map((user) => (
-                      <div
-                        key={user.id}
-                        className={`p-3 rounded-lg border cursor-pointer transition-colors ${
-                          selectedUser === user.id ? "bg-primary/10 border-primary" : "hover:bg-muted"
-                        }`}
-                        onClick={() => setSelectedUser(user.id)}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="font-medium">
-                              {user.firstName} {user.lastName}
-                            </p>
-                            <p className="text-sm text-muted-foreground">{user.email}</p>
-                          </div>
-                          <Badge variant="outline">{user.role}</Badge>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </ScrollArea>
-              </CardContent>
-            </Card>
-
-            {/* Permissões do Usuário */}
-            <div className="lg:col-span-2">
-              {selectedUser ? (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <UserCheck className="h-5 w-5" />
-                      Permissões do Usuário
-                    </CardTitle>
-                    <CardDescription>Gerencie as permissões específicas do usuário selecionado</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <ScrollArea className="h-96">
-                      <div className="space-y-6">
-                        {Object.entries(
-                          userPermissions.reduce(
-                            (acc, perm) => {
-                              if (!acc[perm.category]) {
-                                acc[perm.category] = []
-                              }
-                              acc[perm.category].push(perm)
-                              return acc
-                            },
-                            {} as Record<string, any[]>,
-                          ),
-                        ).map(([category, perms]) => (
-                          <div key={category} className="space-y-3">
-                            <div className="flex items-center gap-2">
-                              <h4 className="font-medium">{category}</h4>
-                              <Separator className="flex-1" />
-                            </div>
-                            <div className="space-y-2">
-                              {perms.map((permission) => (
-                                <div
-                                  key={permission.id}
-                                  className="flex items-center justify-between p-3 border rounded-lg"
-                                >
-                                  <div className="space-y-1">
-                                    <div className="flex items-center gap-2">
-                                      <Label htmlFor={`perm-${permission.id}`} className="font-medium">
-                                        {permission.displayName}
-                                      </Label>
-                                      <Badge
-                                        variant={permission.source === "role" ? "secondary" : "default"}
-                                        className="text-xs"
-                                      >
-                                        {permission.source === "role" ? "Papel" : "Usuário"}
-                                      </Badge>
-                                    </div>
-                                    <p className="text-sm text-muted-foreground">{permission.description}</p>
-                                  </div>
-                                  <div className="flex items-center gap-2">
-                                    {permission.granted ? (
-                                      <Unlock className="h-4 w-4 text-green-500" />
-                                    ) : (
-                                      <Lock className="h-4 w-4 text-red-500" />
-                                    )}
-                                    <Switch
-                                      id={`perm-${permission.id}`}
-                                      checked={permission.granted}
-                                      onCheckedChange={(checked) =>
-                                        handlePermissionToggle(selectedUser, permission.id, checked)
-                                      }
-                                    />
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </ScrollArea>
-                  </CardContent>
-                </Card>
-              ) : (
-                <Card>
-                  <CardContent className="flex items-center justify-center h-96">
-                    <div className="text-center space-y-2">
-                      <Users className="h-12 w-12 text-muted-foreground mx-auto" />
-                      <p className="text-muted-foreground">Selecione um usuário para gerenciar suas permissões</p>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
           </div>
         </TabsContent>
       </Tabs>

@@ -1,167 +1,293 @@
 "use client"
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { MessageCircle, Clock, User, Building } from "lucide-react"
-import { CreateConversationModal } from "@/components/dashboard/modals/create-conversation-modal"
 import { useState } from "react"
+import { Card, CardContent } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { Input } from "@/components/ui/input"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { MessageCircle, Plus, Search, Clock, User, Phone, Archive, Star } from "lucide-react"
 
-const conversations = [
+interface Conversation {
+  id: string
+  contact: {
+    name: string
+    phone: string
+    avatar?: string
+  }
+  lastMessage: {
+    content: string
+    timestamp: string
+    sender: "user" | "contact"
+  }
+  status: "active" | "pending" | "archived"
+  unreadCount: number
+  assignedTo?: string
+}
+
+const mockConversations: Conversation[] = [
   {
     id: "1",
-    contact: "+55 11 99999-9999",
-    contactName: "João Silva",
-    company: "TechStart",
-    lastMessage: "Olá, gostaria de saber mais sobre os planos",
-    timestamp: "2 min atrás",
+    contact: {
+      name: "João Silva",
+      phone: "+55 11 99999-9999",
+      avatar: "/placeholder-user.jpg",
+    },
+    lastMessage: {
+      content: "Olá, gostaria de saber mais sobre os produtos",
+      timestamp: "2024-01-20T10:30:00Z",
+      sender: "contact",
+    },
     status: "active",
-    unread: 3,
+    unreadCount: 2,
     assignedTo: "Maria Santos",
   },
   {
     id: "2",
-    contact: "+55 11 88888-8888",
-    contactName: "Ana Costa",
-    company: "Fashion Store",
-    lastMessage: "Obrigada pelo atendimento!",
-    timestamp: "5 min atrás",
-    status: "resolved",
-    unread: 0,
-    assignedTo: "Carlos Lima",
+    contact: {
+      name: "Ana Costa",
+      phone: "+55 11 88888-8888",
+    },
+    lastMessage: {
+      content: "Obrigada pelo atendimento!",
+      timestamp: "2024-01-20T09:15:00Z",
+      sender: "contact",
+    },
+    status: "active",
+    unreadCount: 0,
+    assignedTo: "Pedro Oliveira",
   },
   {
     id: "3",
-    contact: "+55 11 77777-7777",
-    contactName: "Pedro Oliveira",
-    company: "AutoPeças Plus",
-    lastMessage: "Preciso de ajuda com meu pedido",
-    timestamp: "10 min atrás",
+    contact: {
+      name: "Carlos Mendes",
+      phone: "+55 11 77777-7777",
+    },
+    lastMessage: {
+      content: "Preciso de ajuda com meu pedido",
+      timestamp: "2024-01-20T08:45:00Z",
+      sender: "contact",
+    },
     status: "pending",
-    unread: 1,
-    assignedTo: null,
+    unreadCount: 1,
+  },
+  {
+    id: "4",
+    contact: {
+      name: "Lucia Ferreira",
+      phone: "+55 11 66666-6666",
+    },
+    lastMessage: {
+      content: "Problema resolvido, muito obrigada!",
+      timestamp: "2024-01-19T16:20:00Z",
+      sender: "contact",
+    },
+    status: "archived",
+    unreadCount: 0,
+    assignedTo: "Ana Silva",
   },
 ]
 
 export default function ConversationsPage() {
-  const [showCreateModal, setShowCreateModal] = useState(false)
+  const [conversations, setConversations] = useState<Conversation[]>(mockConversations)
+  const [searchTerm, setSearchTerm] = useState("")
+  const [statusFilter, setStatusFilter] = useState<string>("all")
+
+  const filteredConversations = conversations.filter((conv) => {
+    const matchesSearch =
+      conv.contact.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      conv.contact.phone.includes(searchTerm) ||
+      conv.lastMessage.content.toLowerCase().includes(searchTerm.toLowerCase())
+
+    const matchesStatus = statusFilter === "all" || conv.status === statusFilter
+
+    return matchesSearch && matchesStatus
+  })
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case "active":
+        return <Badge className="bg-green-100 text-green-800 border-green-200">Ativa</Badge>
+      case "pending":
+        return <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200">Pendente</Badge>
+      case "archived":
+        return <Badge className="bg-gray-100 text-gray-800 border-gray-200">Arquivada</Badge>
+      default:
+        return <Badge variant="secondary">{status}</Badge>
+    }
+  }
+
+  const formatTime = (timestamp: string) => {
+    const date = new Date(timestamp)
+    const now = new Date()
+    const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60)
+
+    if (diffInHours < 24) {
+      return date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
+    } else {
+      return date.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })
+    }
+  }
+
+  const stats = [
+    {
+      title: "Total de Conversas",
+      value: conversations.length.toString(),
+      icon: MessageCircle,
+      color: "text-blue-600",
+      bgColor: "bg-blue-100",
+    },
+    {
+      title: "Conversas Ativas",
+      value: conversations.filter((c) => c.status === "active").length.toString(),
+      icon: Star,
+      color: "text-green-600",
+      bgColor: "bg-green-100",
+    },
+    {
+      title: "Pendentes",
+      value: conversations.filter((c) => c.status === "pending").length.toString(),
+      icon: Clock,
+      color: "text-yellow-600",
+      bgColor: "bg-yellow-100",
+    },
+    {
+      title: "Arquivadas",
+      value: conversations.filter((c) => c.status === "archived").length.toString(),
+      icon: Archive,
+      color: "text-gray-600",
+      bgColor: "bg-gray-100",
+    },
+  ]
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">Conversas</h2>
+          <h1 className="text-3xl font-bold tracking-tight">Conversas</h1>
           <p className="text-muted-foreground">Gerencie todas as conversas do WhatsApp</p>
         </div>
-        <Button onClick={() => setShowCreateModal(true)}>
-          <MessageCircle className="mr-2 h-4 w-4" />
+        <Button>
+          <Plus className="mr-2 h-4 w-4" />
           Nova Conversa
         </Button>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total de Conversas</CardTitle>
-            <MessageCircle className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">1,234</div>
-            <p className="text-xs text-muted-foreground">+12% em relação ao mês passado</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Ativas</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">89</div>
-            <p className="text-xs text-muted-foreground">Conversas em andamento</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pendentes</CardTitle>
-            <User className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">23</div>
-            <p className="text-xs text-muted-foreground">Aguardando atendimento</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Resolvidas</CardTitle>
-            <Building className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">1,122</div>
-            <p className="text-xs text-muted-foreground">Este mês</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Conversas Recentes</CardTitle>
-          <CardDescription>Lista das conversas mais recentes</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {conversations.map((conversation) => (
-              <div key={conversation.id} className="flex items-center justify-between p-4 border rounded-lg">
-                <div className="flex items-center space-x-4">
-                  <div className="bg-whatsapp-500 text-white rounded-full w-10 h-10 flex items-center justify-center">
-                    <MessageCircle className="h-5 w-5" />
-                  </div>
+      {/* Stats Cards */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        {stats.map((stat, index) => {
+          const Icon = stat.icon
+          return (
+            <Card key={index}>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
                   <div>
-                    <div className="flex items-center space-x-2">
-                      <p className="font-medium">{conversation.contactName}</p>
-                      <Badge variant="outline">{conversation.company}</Badge>
-                      {conversation.unread > 0 && <Badge variant="destructive">{conversation.unread}</Badge>}
-                    </div>
-                    <p className="text-sm text-muted-foreground">{conversation.contact}</p>
-                    <p className="text-sm">{conversation.lastMessage}</p>
+                    <p className="text-sm font-medium text-muted-foreground">{stat.title}</p>
+                    <p className="text-2xl font-bold">{stat.value}</p>
+                  </div>
+                  <div className={`${stat.bgColor} p-3 rounded-full`}>
+                    <Icon className={`h-6 w-6 ${stat.color}`} />
                   </div>
                 </div>
-                <div className="text-right">
-                  <Badge
-                    variant={
-                      conversation.status === "active"
-                        ? "default"
-                        : conversation.status === "resolved"
-                          ? "secondary"
-                          : "outline"
-                    }
-                  >
-                    {conversation.status === "active"
-                      ? "Ativa"
-                      : conversation.status === "resolved"
-                        ? "Resolvida"
-                        : "Pendente"}
-                  </Badge>
-                  <p className="text-xs text-muted-foreground mt-1">{conversation.timestamp}</p>
+              </CardContent>
+            </Card>
+          )
+        })}
+      </div>
+
+      {/* Filters */}
+      <div className="flex items-center space-x-4">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+          <Input
+            placeholder="Buscar conversas..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        <div className="flex space-x-2">
+          <Button variant={statusFilter === "all" ? "default" : "outline"} onClick={() => setStatusFilter("all")}>
+            Todas
+          </Button>
+          <Button variant={statusFilter === "active" ? "default" : "outline"} onClick={() => setStatusFilter("active")}>
+            Ativas
+          </Button>
+          <Button
+            variant={statusFilter === "pending" ? "default" : "outline"}
+            onClick={() => setStatusFilter("pending")}
+          >
+            Pendentes
+          </Button>
+          <Button
+            variant={statusFilter === "archived" ? "default" : "outline"}
+            onClick={() => setStatusFilter("archived")}
+          >
+            Arquivadas
+          </Button>
+        </div>
+      </div>
+
+      {/* Conversations List */}
+      <div className="grid gap-4">
+        {filteredConversations.map((conversation) => (
+          <Card key={conversation.id} className="hover:shadow-md transition-shadow cursor-pointer">
+            <CardContent className="p-4">
+              <div className="flex items-center space-x-4">
+                <Avatar className="h-12 w-12">
+                  <AvatarImage src={conversation.contact.avatar || "/placeholder.svg"} />
+                  <AvatarFallback>
+                    {conversation.contact.name
+                      .split(" ")
+                      .map((n) => n[0])
+                      .join("")}
+                  </AvatarFallback>
+                </Avatar>
+
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <h3 className="font-semibold text-sm">{conversation.contact.name}</h3>
+                      {getStatusBadge(conversation.status)}
+                      {conversation.unreadCount > 0 && (
+                        <Badge className="bg-red-500 text-white">{conversation.unreadCount}</Badge>
+                      )}
+                    </div>
+                    <span className="text-xs text-muted-foreground">
+                      {formatTime(conversation.lastMessage.timestamp)}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center space-x-2 mt-1">
+                    <Phone className="h-3 w-3 text-muted-foreground" />
+                    <span className="text-xs text-muted-foreground">{conversation.contact.phone}</span>
+                  </div>
+
+                  <p className="text-sm text-muted-foreground mt-2 truncate">{conversation.lastMessage.content}</p>
+
                   {conversation.assignedTo && (
-                    <p className="text-xs text-muted-foreground">Atribuída a: {conversation.assignedTo}</p>
+                    <div className="flex items-center space-x-1 mt-2">
+                      <User className="h-3 w-3 text-muted-foreground" />
+                      <span className="text-xs text-muted-foreground">Atribuído a: {conversation.assignedTo}</span>
+                    </div>
                   )}
                 </div>
               </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-      <CreateConversationModal
-        open={showCreateModal}
-        onOpenChange={setShowCreateModal}
-        onSuccess={() => {
-          // Aqui você recarregaria a lista de conversas
-          console.log("Conversa criada com sucesso!")
-        }}
-      />
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {filteredConversations.length === 0 && (
+        <Card>
+          <CardContent className="text-center py-8">
+            <MessageCircle className="mx-auto h-12 w-12 text-gray-400" />
+            <h3 className="mt-2 text-sm font-semibold text-gray-900">Nenhuma conversa encontrada</h3>
+            <p className="mt-1 text-sm text-gray-500">Tente ajustar os filtros ou termos de busca.</p>
+          </CardContent>
+        </Card>
+      )}
     </div>
   )
 }

@@ -132,6 +132,11 @@ const data = {
       ],
     },
     {
+      title: "Permissões",
+      url: "/dashboard/permissions",
+      icon: Shield,
+    },
+    {
       title: "Relatórios",
       url: "/dashboard/reports",
       icon: BarChart3,
@@ -153,6 +158,11 @@ const data = {
           url: "/dashboard/reports/revenue",
         },
       ],
+    },
+    {
+      title: "Configurações",
+      url: "/dashboard/settings",
+      icon: CreditCard,
     },
     {
       title: "Automação",
