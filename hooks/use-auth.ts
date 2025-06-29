@@ -65,29 +65,38 @@ export function useAuth() {
   const router = useRouter()
 
   const login = async (email: string, password: string) => {
+    console.log("Tentando fazer login com:", email, password)
     setIsLoading(true)
+
     try {
+      // Simular delay de rede
       await new Promise((resolve) => setTimeout(resolve, 1000))
 
       // Verificar se as credenciais correspondem a alguma conta de teste
       const account = testAccounts.find((acc) => acc.email === email && acc.password === password)
 
+      console.log("Conta encontrada:", account)
+
       if (account) {
+        // Salvar no localStorage
         if (typeof window !== "undefined") {
-          localStorage.setItem(
-            "auth-token",
-            JSON.stringify({
-              token: `token-${account.user.id}`,
-              user: account.user,
-            }),
-          )
+          const authData = {
+            token: `token-${account.user.id}`,
+            user: account.user,
+          }
+          localStorage.setItem("auth-token", JSON.stringify(authData))
+          console.log("Dados salvos no localStorage:", authData)
         }
+
+        // Redirecionar para dashboard
+        console.log("Redirecionando para dashboard...")
         router.push("/dashboard")
         return { success: true }
       } else {
-        throw new Error("Credenciais inválidas")
+        throw new Error("Credenciais inválidas. Verifique email e senha.")
       }
     } catch (error) {
+      console.error("Erro no login:", error)
       throw error
     } finally {
       setIsLoading(false)
@@ -97,24 +106,24 @@ export function useAuth() {
   const register = async (data: RegisterData) => {
     setIsLoading(true)
     try {
+      // Simular delay de rede
       await new Promise((resolve) => setTimeout(resolve, 2000))
 
       if (typeof window !== "undefined") {
-        localStorage.setItem(
-          "auth-token",
-          JSON.stringify({
-            token: "demo-token-123",
-            user: {
-              id: "new-user",
-              email: data.email,
-              firstName: data.firstName,
-              lastName: data.lastName,
-              role: "USER",
-              company: data.company,
-            },
-          }),
-        )
+        const authData = {
+          token: "demo-token-new-user",
+          user: {
+            id: "new-user",
+            email: data.email,
+            firstName: data.firstName,
+            lastName: data.lastName,
+            role: "USER",
+            company: data.company,
+          },
+        }
+        localStorage.setItem("auth-token", JSON.stringify(authData))
       }
+
       router.push("/dashboard")
       return { success: true }
     } catch (error) {

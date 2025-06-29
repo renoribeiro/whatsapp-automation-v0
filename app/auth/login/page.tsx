@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -13,8 +12,8 @@ import { MessageCircle, Mail, Lock, Eye, EyeOff, Users, TrendingUp, Shield, Zap 
 import { useAuth } from "@/hooks/use-auth"
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
+  const [email, setEmail] = useState("demo@whatsapp.com")
+  const [password, setPassword] = useState("123456")
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState("")
   const { login, isLoading } = useAuth()
@@ -29,18 +28,19 @@ export default function LoginPage() {
     }
 
     try {
+      console.log("Iniciando login...")
       await login(email, password)
     } catch (err) {
+      console.error("Erro capturado:", err)
       setError(err instanceof Error ? err.message : "Erro ao fazer login")
     }
   }
 
-  const stats = [
-    { icon: Users, value: "10k+", label: "Empresas ativas" },
-    { icon: TrendingUp, value: "300%", label: "Aumento médio em vendas" },
-    { icon: Shield, value: "99.9%", label: "Uptime garantido" },
-    { icon: Zap, value: "24/7", label: "Suporte disponível" },
-  ]
+  const fillCredentials = (email: string, password: string) => {
+    setEmail(email)
+    setPassword(password)
+    setError("")
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-blue-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex">
@@ -56,6 +56,57 @@ export default function LoginPage() {
               <span className="text-2xl font-bold text-gray-900 dark:text-white">WhatsApp Platform</span>
             </Link>
           </div>
+
+          {/* Demo Credentials */}
+          <Card className="bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800">
+            <CardHeader>
+              <CardTitle className="text-lg text-green-800 dark:text-green-300 flex items-center gap-2">
+                <MessageCircle className="h-5 w-5" />
+                Credenciais de Demonstração
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="space-y-2">
+                <p className="font-medium text-green-700 dark:text-green-300">Demo Geral:</p>
+                <button
+                  type="button"
+                  onClick={() => fillCredentials("demo@whatsapp.com", "123456")}
+                  className="w-full text-left p-2 rounded bg-green-100 dark:bg-green-900/30 hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors"
+                >
+                  <p className="text-sm text-green-600 dark:text-green-400">demo@whatsapp.com</p>
+                  <p className="text-sm text-green-600 dark:text-green-400">123456</p>
+                </button>
+              </div>
+
+              <div className="space-y-2">
+                <p className="font-medium text-green-700 dark:text-green-300">Admin Total:</p>
+                <button
+                  type="button"
+                  onClick={() => fillCredentials("reno@re9.online", "123Re92019!@#")}
+                  className="w-full text-left p-2 rounded bg-green-100 dark:bg-green-900/30 hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors"
+                >
+                  <p className="text-sm text-green-600 dark:text-green-400">reno@re9.online</p>
+                  <p className="text-sm text-green-600 dark:text-green-400">123Re92019!@#</p>
+                </button>
+              </div>
+
+              <div className="space-y-2">
+                <p className="font-medium text-green-700 dark:text-green-300">Empresa:</p>
+                <button
+                  type="button"
+                  onClick={() => fillCredentials("renoribeiro@hotmail.com", "123Re92019!@#")}
+                  className="w-full text-left p-2 rounded bg-green-100 dark:bg-green-900/30 hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors"
+                >
+                  <p className="text-sm text-green-600 dark:text-green-400">renoribeiro@hotmail.com</p>
+                  <p className="text-sm text-green-600 dark:text-green-400">123Re92019!@#</p>
+                </button>
+              </div>
+
+              <p className="text-xs text-green-600 dark:text-green-500 mt-2">
+                Clique em qualquer credencial para preencher automaticamente
+              </p>
+            </CardContent>
+          </Card>
 
           {/* Login Card */}
           <Card className="border-0 shadow-xl">
@@ -77,6 +128,7 @@ export default function LoginPage() {
                       onChange={(e) => setEmail(e.target.value)}
                       className="pl-10"
                       disabled={isLoading}
+                      required
                     />
                   </div>
                 </div>
@@ -93,6 +145,7 @@ export default function LoginPage() {
                       onChange={(e) => setPassword(e.target.value)}
                       className="pl-10 pr-10"
                       disabled={isLoading}
+                      required
                     />
                     <button
                       type="button"
@@ -110,7 +163,7 @@ export default function LoginPage() {
                   </Alert>
                 )}
 
-                <Button type="submit" className="w-full" disabled={isLoading}>
+                <Button type="submit" className="w-full bg-green-600 hover:bg-green-700" disabled={isLoading}>
                   {isLoading ? "Entrando..." : "Entrar"}
                 </Button>
               </form>
@@ -137,27 +190,6 @@ export default function LoginPage() {
               </div>
             </CardContent>
           </Card>
-
-          {/* Demo Credentials */}
-          <Card className="bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800">
-            <CardHeader>
-              <CardTitle className="text-lg text-green-800 dark:text-green-300">Credenciais de Demonstração</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3 text-sm">
-              <div>
-                <p className="font-medium text-green-700 dark:text-green-300">Demo Geral:</p>
-                <p className="text-green-600 dark:text-green-400">demo@whatsapp.com / 123456</p>
-              </div>
-              <div>
-                <p className="font-medium text-green-700 dark:text-green-300">Admin Total:</p>
-                <p className="text-green-600 dark:text-green-400">reno@re9.online / 123Re92019!@#</p>
-              </div>
-              <div>
-                <p className="font-medium text-green-700 dark:text-green-300">Empresa:</p>
-                <p className="text-green-600 dark:text-green-400">renoribeiro@hotmail.com / 123Re92019!@#</p>
-              </div>
-            </CardContent>
-          </Card>
         </div>
       </div>
 
@@ -170,16 +202,29 @@ export default function LoginPage() {
           </div>
 
           <div className="grid grid-cols-2 gap-6">
-            {stats.map((stat, index) => {
-              const Icon = stat.icon
-              return (
-                <div key={index} className="bg-gray-800 rounded-xl p-6 hover:bg-gray-700 transition-colors">
-                  <Icon className="h-8 w-8 text-green-400 mb-3" />
-                  <div className="text-2xl font-bold text-white mb-1">{stat.value}</div>
-                  <div className="text-gray-400 text-sm">{stat.label}</div>
-                </div>
-              )
-            })}
+            <div className="bg-gray-800 rounded-xl p-6 hover:bg-gray-700 transition-all duration-300 hover:scale-105">
+              <Users className="h-8 w-8 text-green-400 mb-3" />
+              <div className="text-2xl font-bold text-white mb-1">10k+</div>
+              <div className="text-gray-400 text-sm">Empresas ativas</div>
+            </div>
+
+            <div className="bg-gray-800 rounded-xl p-6 hover:bg-gray-700 transition-all duration-300 hover:scale-105">
+              <TrendingUp className="h-8 w-8 text-blue-400 mb-3" />
+              <div className="text-2xl font-bold text-white mb-1">300%</div>
+              <div className="text-gray-400 text-sm">Aumento médio em vendas</div>
+            </div>
+
+            <div className="bg-gray-800 rounded-xl p-6 hover:bg-gray-700 transition-all duration-300 hover:scale-105">
+              <Shield className="h-8 w-8 text-purple-400 mb-3" />
+              <div className="text-2xl font-bold text-white mb-1">99.9%</div>
+              <div className="text-gray-400 text-sm">Uptime garantido</div>
+            </div>
+
+            <div className="bg-gray-800 rounded-xl p-6 hover:bg-gray-700 transition-all duration-300 hover:scale-105">
+              <Zap className="h-8 w-8 text-yellow-400 mb-3" />
+              <div className="text-2xl font-bold text-white mb-1">24/7</div>
+              <div className="text-gray-400 text-sm">Suporte disponível</div>
+            </div>
           </div>
         </div>
       </div>
