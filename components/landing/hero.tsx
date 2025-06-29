@@ -74,15 +74,15 @@ export function Hero() {
 
           {/* Main heading */}
           <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-gray-900 dark:text-white mb-6">
-            Transforme seu{" "}
+            Transforme seu <span className="text-green-600 dark:text-green-400">WhatsApp</span>
+            <br />
+            em uma{" "}
             <span className="text-green-600 dark:text-green-400">
               <DynamicText
-                words={["WhatsApp", "Atendimento", "Negócio", "Vendas"]}
+                words={["máquina de vendas", "ferramenta + eficiente", "plataforma completa de vendas"]}
                 className="text-green-600 dark:text-green-400"
               />
             </span>
-            <br />
-            em uma máquina de vendas
           </h1>
 
           {/* Subtitle */}

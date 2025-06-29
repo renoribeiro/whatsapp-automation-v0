@@ -2,23 +2,30 @@ import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 
 export function middleware(request: NextRequest) {
-  const token = request.cookies.get("token")?.value || request.headers.get("authorization")?.replace("Bearer ", "")
+  const { pathname } = request.nextUrl
 
-  // Rotas que requerem autenticação
+  // Rotas que precisam de autenticação
   const protectedRoutes = ["/dashboard"]
-  const isProtectedRoute = protectedRoutes.some((route) => request.nextUrl.pathname.startsWith(route))
 
-  // Rotas de autenticação
-  const authRoutes = ["/auth/login", "/auth/register", "/auth/forgot-password"]
-  const isAuthRoute = authRoutes.some((route) => request.nextUrl.pathname.startsWith(route))
+  // Rotas de auth que não devem ser acessadas se já estiver logado
+  const authRoutes = ["/auth/login", "/auth/register"]
 
-  // Se está tentando acessar rota protegida sem token
-  if (isProtectedRoute && !token) {
+  // Verificar se é uma rota protegida
+  const isProtectedRoute = protectedRoutes.some((route) => pathname.startsWith(route))
+
+  // Verificar se é uma rota de auth
+  const isAuthRoute = authRoutes.some((route) => pathname.startsWith(route))
+
+  // Verificar se há token de auth (simplificado para o exemplo)
+  const authToken = request.cookies.get("auth-token")?.value
+
+  if (isProtectedRoute && !authToken) {
+    // Redirecionar para login se tentar acessar rota protegida sem estar logado
     return NextResponse.redirect(new URL("/auth/login", request.url))
   }
 
-  // Se está logado e tentando acessar rotas de auth, redireciona para dashboard
-  if (isAuthRoute && token) {
+  if (isAuthRoute && authToken) {
+    // Redirecionar para dashboard se tentar acessar auth já estando logado
     return NextResponse.redirect(new URL("/dashboard", request.url))
   }
 
@@ -26,5 +33,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
+  matcher: ["/dashboard/:path*", "/auth/login", "/auth/register"],
 }
