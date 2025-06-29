@@ -22,33 +22,67 @@ import { useAuth } from "@/hooks/use-auth"
 export default function DashboardPage() {
   const { getCurrentUser, logout, isAuthenticated } = useAuth()
   const [user, setUser] = useState<any>(null)
+  const [isLoading, setIsLoading] = useState(true)
   const router = useRouter()
 
   useEffect(() => {
-    console.log("🔍 Dashboard: Verificando autenticação...")
+    console.log("🔍 [Dashboard] Verificando autenticação...")
+
+    // Verificar localStorage diretamente também
+    if (typeof window !== "undefined") {
+      const authData = localStorage.getItem("auth-token")
+      console.log("🔍 [Dashboard] localStorage auth-token:", !!authData)
+
+      if (authData) {
+        try {
+          const parsed = JSON.parse(authData)
+          console.log("✅ [Dashboard] Dados do localStorage:", parsed.user)
+          setUser(parsed.user)
+          setIsLoading(false)
+          return
+        } catch (error) {
+          console.error("❌ [Dashboard] Erro ao parsear localStorage:", error)
+          localStorage.removeItem("auth-token")
+        }
+      }
+    }
 
     if (!isAuthenticated()) {
-      console.log("❌ Dashboard: Usuário não autenticado, redirecionando...")
+      console.log("❌ [Dashboard] Usuário não autenticado, redirecionando...")
       router.push("/auth/login")
       return
     }
 
     const currentUser = getCurrentUser()
-    console.log("👤 Dashboard: Usuário atual:", currentUser)
+    console.log("👤 [Dashboard] Usuário atual:", currentUser)
     setUser(currentUser)
+    setIsLoading(false)
   }, [isAuthenticated, getCurrentUser, router])
 
   const handleLogout = () => {
-    console.log("🚪 Dashboard: Fazendo logout...")
+    console.log("🚪 [Dashboard] Fazendo logout...")
     logout()
+  }
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="w-8 h-8 border-4 border-green-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-gray-600">Carregando dashboard...</p>
+        </div>
+      </div>
+    )
   }
 
   if (!user) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
-          <div className="w-8 h-8 border-4 border-green-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-gray-600">Carregando dashboard...</p>
+          <div className="bg-red-100 p-4 rounded-lg mb-4">
+            <p className="text-red-800">Erro: Usuário não encontrado</p>
+          </div>
+          <Button onClick={() => router.push("/auth/login")}>Ir para Login</Button>
         </div>
       </div>
     )
@@ -92,11 +126,11 @@ export default function DashboardPage() {
   const getRoleBadge = (role: string) => {
     switch (role) {
       case "SUPER_ADMIN":
-        return <Badge className="bg-red-100 text-red-800">Super Admin</Badge>
+        return <Badge className="bg-red-100 text-red-800 border-red-200">Super Admin</Badge>
       case "COMPANY_ADMIN":
-        return <Badge className="bg-blue-100 text-blue-800">Admin da Empresa</Badge>
+        return <Badge className="bg-blue-100 text-blue-800 border-blue-200">Admin da Empresa</Badge>
       case "USER":
-        return <Badge className="bg-green-100 text-green-800">Usuário</Badge>
+        return <Badge className="bg-green-100 text-green-800 border-green-200">Usuário</Badge>
       default:
         return <Badge variant="secondary">{role}</Badge>
     }
@@ -142,7 +176,7 @@ export default function DashboardPage() {
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-2xl font-bold mb-2">
-                  Bem-vindo, {user.firstName} {user.lastName}!
+                  Bem-vindo, {user.firstName} {user.lastName}! 🎉
                 </h2>
                 <p className="text-green-100 mb-4">
                   Email: {user.email} | Empresa: {user.company || "Não informada"}
@@ -156,6 +190,24 @@ export default function DashboardPage() {
                 <div className="bg-white/20 p-4 rounded-lg">
                   <MessageCircle className="h-12 w-12 text-white" />
                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Success Alert */}
+        <div className="mb-8">
+          <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+            <div className="flex items-center">
+              <div className="bg-green-600 rounded-full p-2 mr-3">
+                <MessageCircle className="h-5 w-5 text-white" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-green-800">✅ Login realizado com sucesso!</h3>
+                <p className="text-green-600">
+                  Você está conectado como <strong>{user.role}</strong> e pode acessar todas as funcionalidades da
+                  plataforma.
+                </p>
               </div>
             </div>
           </div>
@@ -229,8 +281,8 @@ export default function DashboardPage() {
                     <MessageCircle className="h-4 w-4 text-green-600" />
                   </div>
                   <div className="flex-1">
-                    <p className="text-sm font-medium">Nova mensagem recebida</p>
-                    <p className="text-xs text-gray-500">Há 5 minutos</p>
+                    <p className="text-sm font-medium">Login realizado com sucesso</p>
+                    <p className="text-xs text-gray-500">Agora mesmo</p>
                   </div>
                 </div>
                 <div className="flex items-center space-x-3">
@@ -238,8 +290,8 @@ export default function DashboardPage() {
                     <Users className="h-4 w-4 text-blue-600" />
                   </div>
                   <div className="flex-1">
-                    <p className="text-sm font-medium">Novo contato adicionado</p>
-                    <p className="text-xs text-gray-500">Há 1 hora</p>
+                    <p className="text-sm font-medium">Dashboard carregado</p>
+                    <p className="text-xs text-gray-500">Há poucos segundos</p>
                   </div>
                 </div>
                 <div className="flex items-center space-x-3">
@@ -247,8 +299,8 @@ export default function DashboardPage() {
                     <TrendingUp className="h-4 w-4 text-purple-600" />
                   </div>
                   <div className="flex-1">
-                    <p className="text-sm font-medium">Relatório gerado</p>
-                    <p className="text-xs text-gray-500">Há 2 horas</p>
+                    <p className="text-sm font-medium">Sistema funcionando perfeitamente</p>
+                    <p className="text-xs text-gray-500">Status: Online</p>
                   </div>
                 </div>
               </div>

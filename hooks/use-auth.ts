@@ -67,48 +67,53 @@ export function useAuth() {
 
   // Verificar se há usuário logado ao carregar
   useEffect(() => {
-    const checkAuth = () => {
+    if (typeof window !== "undefined") {
       try {
         const authData = localStorage.getItem("auth-token")
-        console.log("🔍 Verificando auth no localStorage:", authData)
+        console.log("🔍 [useAuth] Verificando localStorage:", authData)
 
         if (authData) {
           const parsed = JSON.parse(authData)
-          console.log("✅ Usuário encontrado:", parsed.user)
+          console.log("✅ [useAuth] Usuário encontrado:", parsed.user)
           setUser(parsed.user)
         } else {
-          console.log("❌ Nenhum usuário logado")
+          console.log("❌ [useAuth] Nenhum usuário logado")
         }
       } catch (error) {
-        console.error("❌ Erro ao verificar auth:", error)
+        console.error("❌ [useAuth] Erro ao verificar auth:", error)
         localStorage.removeItem("auth-token")
       }
     }
-
-    checkAuth()
   }, [])
 
   const login = async (email: string, password: string) => {
-    console.log("🚀 Iniciando processo de login...")
-    console.log("📧 Email:", email)
-    console.log("🔑 Password:", password ? "***" : "vazio")
+    console.log("🚀 [LOGIN] Iniciando processo de login...")
+    console.log("📧 [LOGIN] Email:", email)
+    console.log("🔑 [LOGIN] Password length:", password?.length || 0)
 
     setIsLoading(true)
 
     try {
       // Simular delay de rede
-      console.log("⏳ Simulando delay de rede...")
-      await new Promise((resolve) => setTimeout(resolve, 1500))
+      console.log("⏳ [LOGIN] Simulando delay de rede...")
+      await new Promise((resolve) => setTimeout(resolve, 1000))
 
       // Verificar credenciais
-      console.log("🔍 Procurando conta nos dados de teste...")
+      console.log("🔍 [LOGIN] Procurando conta nos dados de teste...")
+      console.log(
+        "🔍 [LOGIN] Contas disponíveis:",
+        testAccounts.map((acc) => ({ email: acc.email, hasPassword: !!acc.password })),
+      )
+
       const account = testAccounts.find((acc) => {
-        console.log(`🔍 Comparando: ${acc.email} === ${email} && ${acc.password} === ${password}`)
-        return acc.email === email && acc.password === password
+        const emailMatch = acc.email === email
+        const passwordMatch = acc.password === password
+        console.log(`🔍 [LOGIN] Comparando: ${acc.email} === ${email} (${emailMatch}) && senha match: ${passwordMatch}`)
+        return emailMatch && passwordMatch
       })
 
       if (account) {
-        console.log("✅ Conta encontrada:", account.user)
+        console.log("✅ [LOGIN] Conta encontrada:", account.user)
 
         // Salvar no localStorage
         const authData = {
@@ -117,29 +122,37 @@ export function useAuth() {
           timestamp: Date.now(),
         }
 
-        console.log("💾 Salvando no localStorage:", authData)
-        localStorage.setItem("auth-token", JSON.stringify(authData))
+        console.log("💾 [LOGIN] Salvando no localStorage:", authData)
 
-        // Verificar se foi salvo
-        const saved = localStorage.getItem("auth-token")
-        console.log("✅ Verificação - dados salvos:", saved)
+        if (typeof window !== "undefined") {
+          localStorage.setItem("auth-token", JSON.stringify(authData))
+
+          // Verificar se foi salvo
+          const saved = localStorage.getItem("auth-token")
+          console.log("✅ [LOGIN] Verificação - dados salvos:", !!saved)
+        }
 
         // Atualizar estado
         setUser(account.user)
 
-        // Redirecionar
-        console.log("🔄 Redirecionando para dashboard...")
+        // Redirecionar usando router.push primeiro
+        console.log("🔄 [LOGIN] Redirecionando para dashboard...")
+        router.push("/dashboard")
 
-        // Usar window.location para garantir o redirecionamento
-        window.location.href = "/dashboard"
+        // Backup com window.location após um delay
+        setTimeout(() => {
+          if (typeof window !== "undefined") {
+            window.location.href = "/dashboard"
+          }
+        }, 500)
 
         return { success: true }
       } else {
-        console.log("❌ Credenciais inválidas")
+        console.log("❌ [LOGIN] Credenciais inválidas")
         throw new Error("Email ou senha incorretos. Verifique suas credenciais.")
       }
     } catch (error) {
-      console.error("❌ Erro no login:", error)
+      console.error("❌ [LOGIN] Erro no login:", error)
       throw error
     } finally {
       setIsLoading(false)
@@ -147,7 +160,7 @@ export function useAuth() {
   }
 
   const register = async (data: RegisterData) => {
-    console.log("🚀 Iniciando registro:", data)
+    console.log("🚀 [REGISTER] Iniciando registro:", data)
     setIsLoading(true)
 
     try {
@@ -169,15 +182,16 @@ export function useAuth() {
         timestamp: Date.now(),
       }
 
-      localStorage.setItem("auth-token", JSON.stringify(authData))
-      setUser(newUser)
+      if (typeof window !== "undefined") {
+        localStorage.setItem("auth-token", JSON.stringify(authData))
+      }
 
-      // Usar window.location para garantir o redirecionamento
-      window.location.href = "/dashboard"
+      setUser(newUser)
+      router.push("/dashboard")
 
       return { success: true }
     } catch (error) {
-      console.error("❌ Erro no registro:", error)
+      console.error("❌ [REGISTER] Erro no registro:", error)
       throw error
     } finally {
       setIsLoading(false)
@@ -185,10 +199,12 @@ export function useAuth() {
   }
 
   const logout = () => {
-    console.log("🚪 Fazendo logout...")
-    localStorage.removeItem("auth-token")
+    console.log("🚪 [LOGOUT] Fazendo logout...")
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("auth-token")
+    }
     setUser(null)
-    window.location.href = "/"
+    router.push("/")
   }
 
   const getCurrentUser = () => {

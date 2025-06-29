@@ -9,12 +9,24 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { MessageCircle, Mail, Lock, Eye, EyeOff, Users, TrendingUp, Shield, Zap, AlertCircle } from "lucide-react"
+import {
+  MessageCircle,
+  Mail,
+  Lock,
+  Eye,
+  EyeOff,
+  Users,
+  TrendingUp,
+  Shield,
+  Zap,
+  AlertCircle,
+  CheckCircle,
+} from "lucide-react"
 import { useAuth } from "@/hooks/use-auth"
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("demo@whatsapp.com")
-  const [password, setPassword] = useState("123456")
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
@@ -23,50 +35,50 @@ export default function LoginPage() {
 
   // Verificar se já está logado
   useEffect(() => {
+    console.log("🔍 [LoginPage] Verificando se já está autenticado...")
     if (isAuthenticated()) {
-      console.log("👤 Usuário já está logado, redirecionando...")
+      console.log("👤 [LoginPage] Usuário já está logado, redirecionando...")
       router.push("/dashboard")
     }
   }, [isAuthenticated, router])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    console.log("📝 Formulário submetido")
+    console.log("📝 [LoginPage] Formulário submetido")
+    console.log("📧 [LoginPage] Email:", email)
+    console.log("🔑 [LoginPage] Password length:", password?.length || 0)
 
     setError("")
     setSuccess("")
 
+    // Validações básicas
     if (!email || !password) {
       const errorMsg = "Por favor, preencha todos os campos"
-      console.log("❌", errorMsg)
+      console.log("❌ [LoginPage]", errorMsg)
       setError(errorMsg)
       return
     }
 
     if (!email.includes("@")) {
       const errorMsg = "Por favor, digite um email válido"
-      console.log("❌", errorMsg)
+      console.log("❌ [LoginPage]", errorMsg)
       setError(errorMsg)
       return
     }
 
     try {
-      console.log("🔄 Chamando função de login...")
+      console.log("🔄 [LoginPage] Chamando função de login...")
       setSuccess("Verificando credenciais...")
 
       const result = await login(email, password)
 
-      if (result.success) {
-        console.log("✅ Login realizado com sucesso!")
+      if (result?.success) {
+        console.log("✅ [LoginPage] Login realizado com sucesso!")
         setSuccess("Login realizado com sucesso! Redirecionando...")
-
-        // Aguardar um pouco antes de redirecionar
-        setTimeout(() => {
-          window.location.href = "/dashboard"
-        }, 1000)
+        setError("")
       }
     } catch (err) {
-      console.error("❌ Erro capturado no componente:", err)
+      console.error("❌ [LoginPage] Erro capturado:", err)
       const errorMessage = err instanceof Error ? err.message : "Erro desconhecido ao fazer login"
       setError(errorMessage)
       setSuccess("")
@@ -74,37 +86,31 @@ export default function LoginPage() {
   }
 
   const fillCredentials = (newEmail: string, newPassword: string) => {
-    console.log("🔄 Preenchendo credenciais:", newEmail)
+    console.log("🔄 [LoginPage] Preenchendo credenciais:", newEmail)
     setEmail(newEmail)
     setPassword(newPassword)
     setError("")
     setSuccess("")
   }
 
-  const stats = [
+  const testCredentials = [
     {
-      icon: Users,
-      value: "10k+",
-      label: "Empresas ativas",
-      color: "text-green-400",
+      label: "Demo Geral",
+      email: "demo@whatsapp.com",
+      password: "123456",
+      description: "Usuário padrão",
     },
     {
-      icon: TrendingUp,
-      value: "300%",
-      label: "Aumento médio em vendas",
-      color: "text-blue-400",
+      label: "Super Admin",
+      email: "reno@re9.online",
+      password: "123Re92019!@#",
+      description: "Administrador total",
     },
     {
-      icon: Shield,
-      value: "99.9%",
-      label: "Uptime garantido",
-      color: "text-purple-400",
-    },
-    {
-      icon: Zap,
-      value: "24/7",
-      label: "Suporte disponível",
-      color: "text-yellow-400",
+      label: "Admin Empresa",
+      email: "renoribeiro@hotmail.com",
+      password: "123Re92019!@#",
+      description: "Admin da empresa",
     },
   ]
 
@@ -112,7 +118,7 @@ export default function LoginPage() {
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-blue-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex">
       {/* Left Side - Login Form */}
       <div className="flex-1 flex items-center justify-center p-8">
-        <div className="w-full max-w-md space-y-8">
+        <div className="w-full max-w-md space-y-6">
           {/* Logo */}
           <div className="text-center">
             <Link href="/" className="inline-flex items-center space-x-2">
@@ -122,56 +128,6 @@ export default function LoginPage() {
               <span className="text-2xl font-bold text-gray-900 dark:text-white">WhatsApp Platform</span>
             </Link>
           </div>
-
-          {/* Demo Credentials */}
-          <Card className="bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800">
-            <CardHeader>
-              <CardTitle className="text-lg text-green-800 dark:text-green-300 flex items-center gap-2">
-                <MessageCircle className="h-5 w-5" />
-                Credenciais de Demonstração
-              </CardTitle>
-              <CardDescription className="text-green-600 dark:text-green-400">
-                Clique em qualquer credencial para preencher automaticamente
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="space-y-2">
-                <p className="font-medium text-green-700 dark:text-green-300">Demo Geral:</p>
-                <button
-                  type="button"
-                  onClick={() => fillCredentials("demo@whatsapp.com", "123456")}
-                  className="w-full text-left p-3 rounded-lg bg-green-100 dark:bg-green-900/30 hover:bg-green-200 dark:hover:bg-green-900/50 transition-all duration-200 border border-green-200 dark:border-green-800"
-                >
-                  <p className="text-sm font-medium text-green-700 dark:text-green-300">demo@whatsapp.com</p>
-                  <p className="text-sm text-green-600 dark:text-green-400">123456</p>
-                </button>
-              </div>
-
-              <div className="space-y-2">
-                <p className="font-medium text-green-700 dark:text-green-300">Super Admin:</p>
-                <button
-                  type="button"
-                  onClick={() => fillCredentials("reno@re9.online", "123Re92019!@#")}
-                  className="w-full text-left p-3 rounded-lg bg-green-100 dark:bg-green-900/30 hover:bg-green-200 dark:hover:bg-green-900/50 transition-all duration-200 border border-green-200 dark:border-green-800"
-                >
-                  <p className="text-sm font-medium text-green-700 dark:text-green-300">reno@re9.online</p>
-                  <p className="text-sm text-green-600 dark:text-green-400">123Re92019!@#</p>
-                </button>
-              </div>
-
-              <div className="space-y-2">
-                <p className="font-medium text-green-700 dark:text-green-300">Empresa:</p>
-                <button
-                  type="button"
-                  onClick={() => fillCredentials("renoribeiro@hotmail.com", "123Re92019!@#")}
-                  className="w-full text-left p-3 rounded-lg bg-green-100 dark:bg-green-900/30 hover:bg-green-200 dark:hover:bg-green-900/50 transition-all duration-200 border border-green-200 dark:border-green-800"
-                >
-                  <p className="text-sm font-medium text-green-700 dark:text-green-300">renoribeiro@hotmail.com</p>
-                  <p className="text-sm text-green-600 dark:text-green-400">123Re92019!@#</p>
-                </button>
-              </div>
-            </CardContent>
-          </Card>
 
           {/* Login Card */}
           <Card className="border-0 shadow-xl">
@@ -231,8 +187,8 @@ export default function LoginPage() {
                 )}
 
                 {success && (
-                  <Alert className="border-green-200 bg-green-50 text-green-800">
-                    <MessageCircle className="h-4 w-4" />
+                  <Alert className="border-green-200 bg-green-50 text-green-800 dark:border-green-800 dark:bg-green-900/20 dark:text-green-300">
+                    <CheckCircle className="h-4 w-4" />
                     <AlertDescription>{success}</AlertDescription>
                   </Alert>
                 )}
@@ -275,6 +231,35 @@ export default function LoginPage() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Demo Credentials */}
+          <Card className="bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800">
+            <CardHeader>
+              <CardTitle className="text-lg text-green-800 dark:text-green-300 flex items-center gap-2">
+                <MessageCircle className="h-5 w-5" />
+                Credenciais de Teste
+              </CardTitle>
+              <CardDescription className="text-green-600 dark:text-green-400">
+                Clique em qualquer credencial para preencher automaticamente
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {testCredentials.map((cred, index) => (
+                <div key={index} className="space-y-2">
+                  <p className="font-medium text-green-700 dark:text-green-300">{cred.label}:</p>
+                  <button
+                    type="button"
+                    onClick={() => fillCredentials(cred.email, cred.password)}
+                    className="w-full text-left p-3 rounded-lg bg-green-100 dark:bg-green-900/30 hover:bg-green-200 dark:hover:bg-green-900/50 transition-all duration-200 border border-green-200 dark:border-green-800"
+                  >
+                    <p className="text-sm font-medium text-green-700 dark:text-green-300">{cred.email}</p>
+                    <p className="text-sm text-green-600 dark:text-green-400">{cred.password}</p>
+                    <p className="text-xs text-green-500 dark:text-green-500 mt-1">{cred.description}</p>
+                  </button>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
         </div>
       </div>
 
@@ -287,19 +272,29 @@ export default function LoginPage() {
           </div>
 
           <div className="grid grid-cols-2 gap-6">
-            {stats.map((stat, index) => {
-              const Icon = stat.icon
-              return (
-                <div
-                  key={index}
-                  className="bg-gray-800 rounded-xl p-6 hover:bg-gray-700 transition-all duration-300 hover:scale-105"
-                >
-                  <Icon className={`h-8 w-8 ${stat.color} mb-3`} />
-                  <div className="text-2xl font-bold text-white mb-1">{stat.value}</div>
-                  <div className="text-gray-400 text-sm">{stat.label}</div>
-                </div>
-              )
-            })}
+            <div className="bg-gray-800 rounded-xl p-6 hover:bg-gray-700 transition-all duration-300 hover:scale-105">
+              <Users className="h-8 w-8 text-green-400 mb-3" />
+              <div className="text-2xl font-bold text-white mb-1">10k+</div>
+              <div className="text-gray-400 text-sm">Empresas ativas</div>
+            </div>
+
+            <div className="bg-gray-800 rounded-xl p-6 hover:bg-gray-700 transition-all duration-300 hover:scale-105">
+              <TrendingUp className="h-8 w-8 text-blue-400 mb-3" />
+              <div className="text-2xl font-bold text-white mb-1">300%</div>
+              <div className="text-gray-400 text-sm">Aumento médio em vendas</div>
+            </div>
+
+            <div className="bg-gray-800 rounded-xl p-6 hover:bg-gray-700 transition-all duration-300 hover:scale-105">
+              <Shield className="h-8 w-8 text-purple-400 mb-3" />
+              <div className="text-2xl font-bold text-white mb-1">99.9%</div>
+              <div className="text-gray-400 text-sm">Uptime garantido</div>
+            </div>
+
+            <div className="bg-gray-800 rounded-xl p-6 hover:bg-gray-700 transition-all duration-300 hover:scale-105">
+              <Zap className="h-8 w-8 text-yellow-400 mb-3" />
+              <div className="text-2xl font-bold text-white mb-1">24/7</div>
+              <div className="text-gray-400 text-sm">Suporte disponível</div>
+            </div>
           </div>
         </div>
       </div>
