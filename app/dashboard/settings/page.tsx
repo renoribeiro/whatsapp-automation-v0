@@ -1,89 +1,49 @@
 "use client"
 
 import { useState } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { User, Bell, Shield, Palette, Zap, Save } from "lucide-react"
-import { useAuth } from "@/hooks/use-auth"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Badge } from "@/components/ui/badge"
+import { User, Bell, Shield, Palette, Zap, Save, Upload, Key, Smartphone, Mail } from "lucide-react"
 
 export default function SettingsPage() {
-  const { getCurrentUser } = useAuth()
-  const currentUser = getCurrentUser()
-
-  const [settings, setSettings] = useState({
-    profile: {
-      firstName: currentUser?.firstName || "",
-      lastName: currentUser?.lastName || "",
-      email: currentUser?.email || "",
-      phone: "",
-      bio: "",
-    },
-    notifications: {
-      emailNotifications: true,
-      pushNotifications: true,
-      smsNotifications: false,
-      weeklyReports: true,
-    },
-    security: {
-      twoFactorAuth: false,
-      sessionTimeout: "30",
-      passwordExpiry: "90",
-    },
-    appearance: {
-      theme: "light",
-      language: "pt-BR",
-      timezone: "America/Sao_Paulo",
-    },
-    integrations: {
-      whatsappApi: true,
-      googleSheets: false,
-      webhook: true,
-    },
-  })
-
-  const handleSave = (section: string) => {
-    console.log(`Salvando configurações de ${section}:`, settings[section as keyof typeof settings])
-    // Aqui você implementaria a lógica para salvar as configurações
-  }
+  const [activeTab, setActiveTab] = useState("profile")
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Configurações</h1>
-          <p className="text-muted-foreground">Gerencie suas preferências e configurações da conta</p>
-        </div>
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">Configurações</h1>
+        <p className="text-muted-foreground">Gerencie suas preferências e configurações da conta</p>
       </div>
 
-      {/* Settings Tabs */}
-      <Tabs defaultValue="profile" className="space-y-4">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="profile" className="flex items-center space-x-2">
             <User className="h-4 w-4" />
-            <span className="hidden sm:inline">Perfil</span>
+            <span>Perfil</span>
           </TabsTrigger>
           <TabsTrigger value="notifications" className="flex items-center space-x-2">
             <Bell className="h-4 w-4" />
-            <span className="hidden sm:inline">Notificações</span>
+            <span>Notificações</span>
           </TabsTrigger>
           <TabsTrigger value="security" className="flex items-center space-x-2">
             <Shield className="h-4 w-4" />
-            <span className="hidden sm:inline">Segurança</span>
+            <span>Segurança</span>
           </TabsTrigger>
           <TabsTrigger value="appearance" className="flex items-center space-x-2">
             <Palette className="h-4 w-4" />
-            <span className="hidden sm:inline">Aparência</span>
+            <span>Aparência</span>
           </TabsTrigger>
           <TabsTrigger value="integrations" className="flex items-center space-x-2">
             <Zap className="h-4 w-4" />
-            <span className="hidden sm:inline">Integrações</span>
+            <span>Integrações</span>
           </TabsTrigger>
         </TabsList>
 
@@ -91,82 +51,56 @@ export default function SettingsPage() {
           <Card>
             <CardHeader>
               <CardTitle>Informações do Perfil</CardTitle>
-              <CardDescription>Atualize suas informações pessoais</CardDescription>
+              <CardDescription>Atualize suas informações pessoais e foto de perfil</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+            <CardContent className="space-y-6">
+              <div className="flex items-center space-x-4">
+                <Avatar className="h-20 w-20">
+                  <AvatarImage src="/placeholder-user.jpg" />
+                  <AvatarFallback>AS</AvatarFallback>
+                </Avatar>
+                <div>
+                  <Button variant="outline" size="sm">
+                    <Upload className="mr-2 h-4 w-4" />
+                    Alterar Foto
+                  </Button>
+                  <p className="text-sm text-muted-foreground mt-1">JPG, PNG ou GIF. Máximo 2MB.</p>
+                </div>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="firstName">Nome</Label>
-                  <Input
-                    id="firstName"
-                    value={settings.profile.firstName}
-                    onChange={(e) =>
-                      setSettings({
-                        ...settings,
-                        profile: { ...settings.profile, firstName: e.target.value },
-                      })
-                    }
-                  />
+                  <Input id="firstName" defaultValue="Admin" />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="lastName">Sobrenome</Label>
-                  <Input
-                    id="lastName"
-                    value={settings.profile.lastName}
-                    onChange={(e) =>
-                      setSettings({
-                        ...settings,
-                        profile: { ...settings.profile, lastName: e.target.value },
-                      })
-                    }
-                  />
+                  <Input id="lastName" defaultValue="Sistema" />
                 </div>
               </div>
+
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={settings.profile.email}
-                  onChange={(e) =>
-                    setSettings({
-                      ...settings,
-                      profile: { ...settings.profile, email: e.target.value },
-                    })
-                  }
-                />
+                <Input id="email" type="email" defaultValue="admin@whatsapp.com" />
               </div>
+
               <div className="space-y-2">
                 <Label htmlFor="phone">Telefone</Label>
-                <Input
-                  id="phone"
-                  value={settings.profile.phone}
-                  onChange={(e) =>
-                    setSettings({
-                      ...settings,
-                      profile: { ...settings.profile, phone: e.target.value },
-                    })
-                  }
-                  placeholder="+55 (11) 99999-9999"
-                />
+                <Input id="phone" defaultValue="+55 11 99999-9999" />
               </div>
+
               <div className="space-y-2">
                 <Label htmlFor="bio">Bio</Label>
                 <Textarea
                   id="bio"
-                  value={settings.profile.bio}
-                  onChange={(e) =>
-                    setSettings({
-                      ...settings,
-                      profile: { ...settings.profile, bio: e.target.value },
-                    })
-                  }
                   placeholder="Conte um pouco sobre você..."
+                  defaultValue="Administrador do sistema WhatsApp Platform"
                 />
               </div>
-              <Button onClick={() => handleSave("profile")}>
+
+              <Button>
                 <Save className="mr-2 h-4 w-4" />
-                Salvar Perfil
+                Salvar Alterações
               </Button>
             </CardContent>
           </Card>
@@ -176,72 +110,54 @@ export default function SettingsPage() {
           <Card>
             <CardHeader>
               <CardTitle>Preferências de Notificação</CardTitle>
-              <CardDescription>Configure como você deseja receber notificações</CardDescription>
+              <CardDescription>Configure como e quando você deseja receber notificações</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Notificações por Email</Label>
-                  <p className="text-sm text-muted-foreground">Receba notificações importantes por email</p>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>Notificações por Email</Label>
+                    <p className="text-sm text-muted-foreground">Receber notificações importantes por email</p>
+                  </div>
+                  <Switch defaultChecked />
                 </div>
-                <Switch
-                  checked={settings.notifications.emailNotifications}
-                  onCheckedChange={(checked) =>
-                    setSettings({
-                      ...settings,
-                      notifications: { ...settings.notifications, emailNotifications: checked },
-                    })
-                  }
-                />
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Notificações Push</Label>
-                  <p className="text-sm text-muted-foreground">Receba notificações push no navegador</p>
+
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>Notificações Push</Label>
+                    <p className="text-sm text-muted-foreground">Receber notificações push no navegador</p>
+                  </div>
+                  <Switch defaultChecked />
                 </div>
-                <Switch
-                  checked={settings.notifications.pushNotifications}
-                  onCheckedChange={(checked) =>
-                    setSettings({
-                      ...settings,
-                      notifications: { ...settings.notifications, pushNotifications: checked },
-                    })
-                  }
-                />
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Notificações SMS</Label>
-                  <p className="text-sm text-muted-foreground">Receba notificações críticas por SMS</p>
+
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>Novas Mensagens</Label>
+                    <p className="text-sm text-muted-foreground">Notificar sobre novas mensagens recebidas</p>
+                  </div>
+                  <Switch defaultChecked />
                 </div>
-                <Switch
-                  checked={settings.notifications.smsNotifications}
-                  onCheckedChange={(checked) =>
-                    setSettings({
-                      ...settings,
-                      notifications: { ...settings.notifications, smsNotifications: checked },
-                    })
-                  }
-                />
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Relatórios Semanais</Label>
-                  <p className="text-sm text-muted-foreground">Receba um resumo semanal por email</p>
+
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>Relatórios Semanais</Label>
+                    <p className="text-sm text-muted-foreground">Receber resumo semanal por email</p>
+                  </div>
+                  <Switch />
                 </div>
-                <Switch
-                  checked={settings.notifications.weeklyReports}
-                  onCheckedChange={(checked) =>
-                    setSettings({
-                      ...settings,
-                      notifications: { ...settings.notifications, weeklyReports: checked },
-                    })
-                  }
-                />
+
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>Atualizações do Sistema</Label>
+                    <p className="text-sm text-muted-foreground">Notificar sobre atualizações e manutenções</p>
+                  </div>
+                  <Switch defaultChecked />
+                </div>
               </div>
-              <Button onClick={() => handleSave("notifications")}>
+
+              <Button>
                 <Save className="mr-2 h-4 w-4" />
-                Salvar Notificações
+                Salvar Preferências
               </Button>
             </CardContent>
           </Card>
@@ -251,72 +167,64 @@ export default function SettingsPage() {
           <Card>
             <CardHeader>
               <CardTitle>Configurações de Segurança</CardTitle>
-              <CardDescription>Gerencie a segurança da sua conta</CardDescription>
+              <CardDescription>Gerencie sua senha e configurações de segurança</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Autenticação de Dois Fatores</Label>
-                  <p className="text-sm text-muted-foreground">Adicione uma camada extra de segurança</p>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="currentPassword">Senha Atual</Label>
+                  <Input id="currentPassword" type="password" />
                 </div>
-                <Switch
-                  checked={settings.security.twoFactorAuth}
-                  onCheckedChange={(checked) =>
-                    setSettings({
-                      ...settings,
-                      security: { ...settings.security, twoFactorAuth: checked },
-                    })
-                  }
-                />
+                <div className="space-y-2">
+                  <Label htmlFor="newPassword">Nova Senha</Label>
+                  <Input id="newPassword" type="password" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="confirmPassword">Confirmar Nova Senha</Label>
+                  <Input id="confirmPassword" type="password" />
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="sessionTimeout">Timeout da Sessão (minutos)</Label>
-                <Select
-                  value={settings.security.sessionTimeout}
-                  onValueChange={(value) =>
-                    setSettings({
-                      ...settings,
-                      security: { ...settings.security, sessionTimeout: value },
-                    })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="15">15 minutos</SelectItem>
-                    <SelectItem value="30">30 minutos</SelectItem>
-                    <SelectItem value="60">1 hora</SelectItem>
-                    <SelectItem value="120">2 horas</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="passwordExpiry">Expiração da Senha (dias)</Label>
-                <Select
-                  value={settings.security.passwordExpiry}
-                  onValueChange={(value) =>
-                    setSettings({
-                      ...settings,
-                      security: { ...settings.security, passwordExpiry: value },
-                    })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="30">30 dias</SelectItem>
-                    <SelectItem value="60">60 dias</SelectItem>
-                    <SelectItem value="90">90 dias</SelectItem>
-                    <SelectItem value="never">Nunca</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <Button onClick={() => handleSave("security")}>
-                <Save className="mr-2 h-4 w-4" />
-                Salvar Segurança
+
+              <Button>
+                <Key className="mr-2 h-4 w-4" />
+                Alterar Senha
               </Button>
+
+              <div className="border-t pt-6">
+                <h4 className="text-lg font-medium mb-4">Autenticação de Dois Fatores</h4>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label>2FA via SMS</Label>
+                      <p className="text-sm text-muted-foreground">Receber códigos de verificação por SMS</p>
+                    </div>
+                    <Switch />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label>2FA via App Autenticador</Label>
+                      <p className="text-sm text-muted-foreground">Usar Google Authenticator ou similar</p>
+                    </div>
+                    <Switch />
+                  </div>
+                </div>
+              </div>
+
+              <div className="border-t pt-6">
+                <h4 className="text-lg font-medium mb-4">Sessões Ativas</h4>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between p-3 border rounded-lg">
+                    <div className="flex items-center space-x-3">
+                      <Smartphone className="h-5 w-5 text-muted-foreground" />
+                      <div>
+                        <p className="font-medium">Chrome - Windows</p>
+                        <p className="text-sm text-muted-foreground">São Paulo, Brasil • Ativo agora</p>
+                      </div>
+                    </div>
+                    <Badge variant="default">Atual</Badge>
+                  </div>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -324,76 +232,73 @@ export default function SettingsPage() {
         <TabsContent value="appearance" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Aparência</CardTitle>
+              <CardTitle>Configurações de Aparência</CardTitle>
               <CardDescription>Personalize a aparência da interface</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="theme">Tema</Label>
-                <Select
-                  value={settings.appearance.theme}
-                  onValueChange={(value) =>
-                    setSettings({
-                      ...settings,
-                      appearance: { ...settings.appearance, theme: value },
-                    })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="light">Claro</SelectItem>
-                    <SelectItem value="dark">Escuro</SelectItem>
-                    <SelectItem value="system">Sistema</SelectItem>
-                  </SelectContent>
-                </Select>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Tema</Label>
+                  <Select defaultValue="system">
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="light">Claro</SelectItem>
+                      <SelectItem value="dark">Escuro</SelectItem>
+                      <SelectItem value="system">Sistema</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Idioma</Label>
+                  <Select defaultValue="pt-BR">
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="pt-BR">Português (Brasil)</SelectItem>
+                      <SelectItem value="en-US">English (US)</SelectItem>
+                      <SelectItem value="es-ES">Español</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Fuso Horário</Label>
+                  <Select defaultValue="America/Sao_Paulo">
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="America/Sao_Paulo">São Paulo (GMT-3)</SelectItem>
+                      <SelectItem value="America/New_York">New York (GMT-5)</SelectItem>
+                      <SelectItem value="Europe/London">London (GMT+0)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>Sidebar Compacta</Label>
+                    <p className="text-sm text-muted-foreground">Usar sidebar em modo compacto</p>
+                  </div>
+                  <Switch />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>Animações</Label>
+                    <p className="text-sm text-muted-foreground">Habilitar animações da interface</p>
+                  </div>
+                  <Switch defaultChecked />
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="language">Idioma</Label>
-                <Select
-                  value={settings.appearance.language}
-                  onValueChange={(value) =>
-                    setSettings({
-                      ...settings,
-                      appearance: { ...settings.appearance, language: value },
-                    })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="pt-BR">Português (Brasil)</SelectItem>
-                    <SelectItem value="en-US">English (US)</SelectItem>
-                    <SelectItem value="es-ES">Español</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="timezone">Fuso Horário</Label>
-                <Select
-                  value={settings.appearance.timezone}
-                  onValueChange={(value) =>
-                    setSettings({
-                      ...settings,
-                      appearance: { ...settings.appearance, timezone: value },
-                    })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="America/Sao_Paulo">São Paulo (GMT-3)</SelectItem>
-                    <SelectItem value="America/New_York">New York (GMT-5)</SelectItem>
-                    <SelectItem value="Europe/London">London (GMT+0)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <Button onClick={() => handleSave("appearance")}>
+
+              <Button>
                 <Save className="mr-2 h-4 w-4" />
-                Salvar Aparência
+                Salvar Configurações
               </Button>
             </CardContent>
           </Card>
@@ -403,58 +308,75 @@ export default function SettingsPage() {
           <Card>
             <CardHeader>
               <CardTitle>Integrações</CardTitle>
-              <CardDescription>Configure integrações com serviços externos</CardDescription>
+              <CardDescription>Conecte com serviços externos e APIs</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>WhatsApp API</Label>
-                  <p className="text-sm text-muted-foreground">Conectar com a API oficial do WhatsApp</p>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="flex items-center space-x-3">
+                    <div className="p-2 bg-green-100 rounded-lg">
+                      <Zap className="h-5 w-5 text-green-600" />
+                    </div>
+                    <div>
+                      <p className="font-medium">WhatsApp Business API</p>
+                      <p className="text-sm text-muted-foreground">Conectado • Última sincronização: há 2 minutos</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Badge variant="default">Ativo</Badge>
+                    <Button variant="outline" size="sm">
+                      Configurar
+                    </Button>
+                  </div>
                 </div>
-                <Switch
-                  checked={settings.integrations.whatsappApi}
-                  onCheckedChange={(checked) =>
-                    setSettings({
-                      ...settings,
-                      integrations: { ...settings.integrations, whatsappApi: checked },
-                    })
-                  }
-                />
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Google Sheets</Label>
-                  <p className="text-sm text-muted-foreground">Exportar dados para planilhas do Google</p>
+
+                <div className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="flex items-center space-x-3">
+                    <div className="p-2 bg-blue-100 rounded-lg">
+                      <Mail className="h-5 w-5 text-blue-600" />
+                    </div>
+                    <div>
+                      <p className="font-medium">Email Marketing</p>
+                      <p className="text-sm text-muted-foreground">Não conectado</p>
+                    </div>
+                  </div>
+                  <Button variant="outline" size="sm">
+                    Conectar
+                  </Button>
                 </div>
-                <Switch
-                  checked={settings.integrations.googleSheets}
-                  onCheckedChange={(checked) =>
-                    setSettings({
-                      ...settings,
-                      integrations: { ...settings.integrations, googleSheets: checked },
-                    })
-                  }
-                />
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Webhooks</Label>
-                  <p className="text-sm text-muted-foreground">Receber notificações via webhook</p>
+
+                <div className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="flex items-center space-x-3">
+                    <div className="p-2 bg-purple-100 rounded-lg">
+                      <Zap className="h-5 w-5 text-purple-600" />
+                    </div>
+                    <div>
+                      <p className="font-medium">Zapier</p>
+                      <p className="text-sm text-muted-foreground">Não conectado</p>
+                    </div>
+                  </div>
+                  <Button variant="outline" size="sm">
+                    Conectar
+                  </Button>
                 </div>
-                <Switch
-                  checked={settings.integrations.webhook}
-                  onCheckedChange={(checked) =>
-                    setSettings({
-                      ...settings,
-                      integrations: { ...settings.integrations, webhook: checked },
-                    })
-                  }
-                />
               </div>
-              <Button onClick={() => handleSave("integrations")}>
-                <Save className="mr-2 h-4 w-4" />
-                Salvar Integrações
-              </Button>
+
+              <div className="border-t pt-6">
+                <h4 className="text-lg font-medium mb-4">Configurações de API</h4>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="apiKey">Chave da API</Label>
+                    <div className="flex space-x-2">
+                      <Input id="apiKey" type="password" defaultValue="sk-1234567890abcdef" readOnly />
+                      <Button variant="outline">Regenerar</Button>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="webhookUrl">URL do Webhook</Label>
+                    <Input id="webhookUrl" placeholder="https://sua-api.com/webhook" />
+                  </div>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>

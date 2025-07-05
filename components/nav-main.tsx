@@ -41,30 +41,37 @@ export function NavMain({
           <Collapsible key={item.title} asChild defaultOpen={item.isActive} className="group/collapsible">
             <SidebarMenuItem>
               <CollapsibleTrigger asChild>
-                <SidebarMenuButton
-                  tooltip={item.title}
-                  className={pathname === item.url ? "bg-sidebar-accent text-sidebar-accent-foreground" : ""}
-                >
-                  {item.icon && <item.icon />}
-                  <span>{item.title}</span>
-                  {item.badge && (
-                    <span className="ml-auto bg-red-500 text-white text-xs px-2 py-1 rounded-full">{item.badge}</span>
-                  )}
-                  {item.items && (
-                    <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                <SidebarMenuButton tooltip={item.title} isActive={pathname === item.url} asChild>
+                  {item.items ? (
+                    <div className="flex items-center w-full">
+                      {item.icon && <item.icon />}
+                      <span>{item.title}</span>
+                      {item.badge && (
+                        <span className="ml-auto bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full">
+                          {item.badge}
+                        </span>
+                      )}
+                      <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                    </div>
+                  ) : (
+                    <Link href={item.url} className="flex items-center w-full">
+                      {item.icon && <item.icon />}
+                      <span>{item.title}</span>
+                      {item.badge && (
+                        <span className="ml-auto bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full">
+                          {item.badge}
+                        </span>
+                      )}
+                    </Link>
                   )}
                 </SidebarMenuButton>
               </CollapsibleTrigger>
-              {!item.items && <Link href={item.url} className="absolute inset-0" />}
               {item.items?.length ? (
                 <CollapsibleContent>
                   <SidebarMenuSub>
-                    {item.items?.map((subItem) => (
+                    {item.items.map((subItem) => (
                       <SidebarMenuSubItem key={subItem.title}>
-                        <SidebarMenuSubButton
-                          asChild
-                          className={pathname === subItem.url ? "bg-sidebar-accent text-sidebar-accent-foreground" : ""}
-                        >
+                        <SidebarMenuSubButton asChild isActive={pathname === subItem.url}>
                           <Link href={subItem.url}>
                             <span>{subItem.title}</span>
                           </Link>

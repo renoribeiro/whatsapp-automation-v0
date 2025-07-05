@@ -29,11 +29,7 @@ export function NavProjects({
       <SidebarMenu>
         {projects.map((item) => (
           <SidebarMenuItem key={item.name}>
-            <SidebarMenuButton
-              asChild
-              tooltip={item.name}
-              className={pathname === item.url ? "bg-sidebar-accent text-sidebar-accent-foreground" : ""}
-            >
+            <SidebarMenuButton asChild tooltip={item.name} isActive={pathname === item.url}>
               <Link href={item.url}>
                 <item.icon />
                 <span>{item.name}</span>

@@ -1,192 +1,134 @@
 "use client"
 
 import { useState } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Shield, Plus, Search, Users, Lock, Unlock, Settings } from "lucide-react"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { Search, Plus, MoreHorizontal, Shield, Users, Settings, Eye } from "lucide-react"
 
-interface Permission {
-  id: string
-  name: string
-  description: string
-  resource: string
-  action: string
-  isActive: boolean
-}
-
-interface Role {
-  id: string
-  name: string
-  description: string
-  permissions: string[]
-  userCount: number
-}
-
-const mockPermissions: Permission[] = [
+// Mock data
+const permissions = [
   {
-    id: "1",
-    name: "Visualizar Usuários",
-    description: "Permite visualizar a lista de usuários",
-    resource: "users",
-    action: "read",
-    isActive: true,
+    id: 1,
+    name: "Gerenciar Usuários",
+    description: "Criar, editar e excluir usuários",
+    module: "users",
+    active: true,
+    usersCount: 12,
   },
   {
-    id: "2",
-    name: "Criar Usuários",
-    description: "Permite criar novos usuários",
-    resource: "users",
-    action: "create",
-    isActive: true,
+    id: 2,
+    name: "Visualizar Relatórios",
+    description: "Acessar relatórios e métricas",
+    module: "reports",
+    active: true,
+    usersCount: 45,
   },
   {
-    id: "3",
-    name: "Editar Usuários",
-    description: "Permite editar informações de usuários",
-    resource: "users",
-    action: "update",
-    isActive: true,
+    id: 3,
+    name: "Gerenciar Empresas",
+    description: "Criar e editar empresas",
+    module: "companies",
+    active: true,
+    usersCount: 8,
   },
   {
-    id: "4",
-    name: "Excluir Usuários",
-    description: "Permite excluir usuários",
-    resource: "users",
-    action: "delete",
-    isActive: false,
-  },
-  {
-    id: "5",
-    name: "Visualizar Empresas",
-    description: "Permite visualizar a lista de empresas",
-    resource: "companies",
-    action: "read",
-    isActive: true,
-  },
-  {
-    id: "6",
-    name: "Gerenciar Conversas",
-    description: "Permite gerenciar conversas do WhatsApp",
-    resource: "conversations",
-    action: "manage",
-    isActive: true,
+    id: 4,
+    name: "Configurações Avançadas",
+    description: "Acessar configurações do sistema",
+    module: "settings",
+    active: false,
+    usersCount: 3,
   },
 ]
 
-const mockRoles: Role[] = [
+const roles = [
   {
-    id: "1",
+    id: 1,
     name: "Super Admin",
     description: "Acesso total ao sistema",
-    permissions: ["1", "2", "3", "4", "5", "6"],
-    userCount: 2,
+    permissions: ["users", "companies", "reports", "settings"],
+    usersCount: 2,
+    color: "destructive",
   },
   {
-    id: "2",
-    name: "Admin da Empresa",
-    description: "Administrador de empresa com acesso limitado",
-    permissions: ["1", "2", "3", "5", "6"],
-    userCount: 8,
+    id: 2,
+    name: "Admin",
+    description: "Administrador com acesso limitado",
+    permissions: ["users", "reports"],
+    usersCount: 8,
+    color: "default",
   },
   {
-    id: "3",
-    name: "Usuário",
-    description: "Usuário padrão com acesso básico",
-    permissions: ["1", "5", "6"],
-    userCount: 25,
+    id: 3,
+    name: "Manager",
+    description: "Gerente de equipe",
+    permissions: ["reports"],
+    usersCount: 15,
+    color: "secondary",
+  },
+  {
+    id: 4,
+    name: "User",
+    description: "Usuário padrão",
+    permissions: [],
+    usersCount: 234,
+    color: "outline",
+  },
+]
+
+const stats = [
+  {
+    title: "Total de Permissões",
+    value: "24",
+    icon: Shield,
+    change: "+2",
+  },
+  {
+    title: "Roles Ativos",
+    value: "8",
+    icon: Users,
+    change: "+1",
+  },
+  {
+    title: "Permissões Ativas",
+    value: "18",
+    icon: Settings,
+    change: "+3",
+  },
+  {
+    title: "Usuários com Acesso",
+    value: "259",
+    icon: Eye,
+    change: "+12",
   },
 ]
 
 export default function PermissionsPage() {
-  const [permissions, setPermissions] = useState<Permission[]>(mockPermissions)
-  const [roles, setRoles] = useState<Role[]>(mockRoles)
   const [searchTerm, setSearchTerm] = useState("")
+  const [activeTab, setActiveTab] = useState("permissions")
 
-  const filteredPermissions = permissions.filter(
-    (permission) =>
-      permission.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      permission.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      permission.resource.toLowerCase().includes(searchTerm.toLowerCase()),
-  )
-
-  const togglePermission = (id: string) => {
-    setPermissions(permissions.map((p) => (p.id === id ? { ...p, isActive: !p.isActive } : p)))
-  }
-
-  const getResourceBadge = (resource: string) => {
+  const getModuleBadge = (module: string) => {
     const colors = {
-      users: "bg-blue-100 text-blue-800 border-blue-200",
-      companies: "bg-green-100 text-green-800 border-green-200",
-      conversations: "bg-purple-100 text-purple-800 border-purple-200",
-      reports: "bg-orange-100 text-orange-800 border-orange-200",
-    }
+      users: "default",
+      companies: "secondary",
+      reports: "outline",
+      settings: "destructive",
+    } as const
 
-    return (
-      <Badge className={colors[resource as keyof typeof colors] || "bg-gray-100 text-gray-800 border-gray-200"}>
-        {resource}
-      </Badge>
-    )
+    return <Badge variant={colors[module as keyof typeof colors] || "secondary"}>{module}</Badge>
   }
-
-  const getActionBadge = (action: string) => {
-    const colors = {
-      read: "bg-green-100 text-green-800 border-green-200",
-      create: "bg-blue-100 text-blue-800 border-blue-200",
-      update: "bg-yellow-100 text-yellow-800 border-yellow-200",
-      delete: "bg-red-100 text-red-800 border-red-200",
-      manage: "bg-purple-100 text-purple-800 border-purple-200",
-    }
-
-    return (
-      <Badge className={colors[action as keyof typeof colors] || "bg-gray-100 text-gray-800 border-gray-200"}>
-        {action}
-      </Badge>
-    )
-  }
-
-  const stats = [
-    {
-      title: "Total de Permissões",
-      value: permissions.length.toString(),
-      icon: Shield,
-      color: "text-blue-600",
-      bgColor: "bg-blue-100",
-    },
-    {
-      title: "Permissões Ativas",
-      value: permissions.filter((p) => p.isActive).length.toString(),
-      icon: Unlock,
-      color: "text-green-600",
-      bgColor: "bg-green-100",
-    },
-    {
-      title: "Funções Criadas",
-      value: roles.length.toString(),
-      icon: Users,
-      color: "text-purple-600",
-      bgColor: "bg-purple-100",
-    },
-    {
-      title: "Permissões Inativas",
-      value: permissions.filter((p) => !p.isActive).length.toString(),
-      icon: Lock,
-      color: "text-red-600",
-      bgColor: "bg-red-100",
-    },
-  ]
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Permissões</h1>
-          <p className="text-muted-foreground">Gerencie permissões e funções de usuários</p>
+          <p className="text-muted-foreground">Gerencie permissões e roles do sistema</p>
         </div>
         <Button>
           <Plus className="mr-2 h-4 w-4" />
@@ -196,130 +138,156 @@ export default function PermissionsPage() {
 
       {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {stats.map((stat, index) => {
-          const Icon = stat.icon
-          return (
-            <Card key={index}>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">{stat.title}</p>
-                    <p className="text-2xl font-bold">{stat.value}</p>
-                  </div>
-                  <div className={`${stat.bgColor} p-3 rounded-full`}>
-                    <Icon className={`h-6 w-6 ${stat.color}`} />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )
-        })}
+        {stats.map((stat) => (
+          <Card key={stat.title}>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
+              <stat.icon className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stat.value}</div>
+              <p className="text-xs text-muted-foreground">{stat.change} desde o mês passado</p>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
       {/* Tabs */}
-      <Tabs defaultValue="permissions" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="permissions">Permissões</TabsTrigger>
-          <TabsTrigger value="roles">Funções</TabsTrigger>
-        </TabsList>
+      <div className="flex space-x-4 border-b">
+        <button
+          onClick={() => setActiveTab("permissions")}
+          className={`pb-2 px-1 ${
+            activeTab === "permissions" ? "border-b-2 border-primary text-primary" : "text-muted-foreground"
+          }`}
+        >
+          Permissões
+        </button>
+        <button
+          onClick={() => setActiveTab("roles")}
+          className={`pb-2 px-1 ${
+            activeTab === "roles" ? "border-b-2 border-primary text-primary" : "text-muted-foreground"
+          }`}
+        >
+          Roles
+        </button>
+      </div>
 
-        <TabsContent value="permissions" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Lista de Permissões</CardTitle>
-              <CardDescription>Gerencie todas as permissões do sistema</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center space-x-4 mb-6">
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                  <Input
-                    placeholder="Buscar permissões..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
+      {activeTab === "permissions" && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Lista de Permissões</CardTitle>
+            <CardDescription>Gerencie todas as permissões do sistema</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center space-x-4 mb-4">
+              <div className="relative flex-1">
+                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar permissões..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-8"
+                />
               </div>
+            </div>
 
-              <div className="rounded-md border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Nome</TableHead>
-                      <TableHead>Descrição</TableHead>
-                      <TableHead>Recurso</TableHead>
-                      <TableHead>Ação</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Ações</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredPermissions.map((permission) => (
-                      <TableRow key={permission.id}>
-                        <TableCell className="font-medium">{permission.name}</TableCell>
-                        <TableCell>{permission.description}</TableCell>
-                        <TableCell>{getResourceBadge(permission.resource)}</TableCell>
-                        <TableCell>{getActionBadge(permission.action)}</TableCell>
-                        <TableCell>
-                          <Badge
-                            className={permission.isActive ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}
-                          >
-                            {permission.isActive ? "Ativa" : "Inativa"}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Switch
-                            checked={permission.isActive}
-                            onCheckedChange={() => togglePermission(permission.id)}
-                          />
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Nome</TableHead>
+                  <TableHead>Descrição</TableHead>
+                  <TableHead>Módulo</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Usuários</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {permissions.map((permission) => (
+                  <TableRow key={permission.id}>
+                    <TableCell className="font-medium">{permission.name}</TableCell>
+                    <TableCell>{permission.description}</TableCell>
+                    <TableCell>{getModuleBadge(permission.module)}</TableCell>
+                    <TableCell>
+                      <Switch checked={permission.active} />
+                    </TableCell>
+                    <TableCell>{permission.usersCount} usuários</TableCell>
+                    <TableCell className="text-right">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" className="h-8 w-8 p-0">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem>Editar</DropdownMenuItem>
+                          <DropdownMenuItem>Ver Usuários</DropdownMenuItem>
+                          <DropdownMenuItem className="text-red-600">Excluir</DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
 
-        <TabsContent value="roles" className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {roles.map((role) => (
-              <Card key={role.id}>
-                <CardHeader>
-                  <CardTitle className="flex items-center justify-between">
-                    {role.name}
-                    <Badge variant="secondary">{role.userCount} usuários</Badge>
-                  </CardTitle>
-                  <CardDescription>{role.description}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    <p className="text-sm font-medium">Permissões:</p>
-                    <div className="flex flex-wrap gap-1">
-                      {role.permissions.map((permId) => {
-                        const permission = permissions.find((p) => p.id === permId)
-                        return permission ? (
-                          <Badge key={permId} variant="outline" className="text-xs">
-                            {permission.name}
-                          </Badge>
-                        ) : null
-                      })}
+      {activeTab === "roles" && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Lista de Roles</CardTitle>
+            <CardDescription>Gerencie roles e suas permissões</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {roles.map((role) => (
+                <Card key={role.id}>
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-lg">{role.name}</CardTitle>
+                      <Badge variant={role.color as any}>{role.usersCount} usuários</Badge>
                     </div>
-                  </div>
-                  <div className="flex space-x-2 mt-4">
-                    <Button variant="outline" size="sm">
-                      <Settings className="mr-2 h-4 w-4" />
-                      Editar
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </TabsContent>
-      </Tabs>
+                    <CardDescription>{role.description}</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium">Permissões:</p>
+                      <div className="flex flex-wrap gap-1">
+                        {role.permissions.length > 0 ? (
+                          role.permissions.map((permission) => (
+                            <Badge key={permission} variant="outline" className="text-xs">
+                              {permission}
+                            </Badge>
+                          ))
+                        ) : (
+                          <span className="text-xs text-muted-foreground">Nenhuma permissão</span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex justify-end mt-4">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem>Editar</DropdownMenuItem>
+                          <DropdownMenuItem>Ver Usuários</DropdownMenuItem>
+                          <DropdownMenuItem>Duplicar</DropdownMenuItem>
+                          <DropdownMenuItem className="text-red-600">Excluir</DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   )
 }
